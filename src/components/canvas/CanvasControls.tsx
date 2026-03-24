@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type RefObject } from 'react'
 import {
   Layers,
   ArrowLeftRight,
@@ -15,8 +15,14 @@ import { useComparisonStore } from '@/stores/comparison-store'
 import { aircraftCatalog } from '@/data/aircraft-catalog'
 import { hasAircraftImage } from '@/data/aircraft-images'
 import { cn } from '@/lib/utils'
+import { ExportButton } from './ExportButton'
 
-export function CanvasControls() {
+interface CanvasControlsProps {
+  canvasRef: RefObject<HTMLDivElement | null>
+  statsRef: RefObject<HTMLDivElement | null>
+}
+
+export function CanvasControls({ canvasRef, statsRef }: CanvasControlsProps) {
   const {
     viewMode,
     setViewMode,
@@ -125,6 +131,11 @@ export function CanvasControls() {
         pill={pill}
         ico={ico}
       />
+
+      <div className={divider} />
+
+      {/* Export */}
+      <ExportButton canvasRef={canvasRef} statsRef={statsRef} />
     </div>
   )
 }

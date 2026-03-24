@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom'
 import { useComparisonStore } from '@/stores/comparison-store'
 import { Header } from '@/components/layout/Header'
@@ -36,6 +36,9 @@ function ComparisonPage() {
     }
   }, [aircraft1Slug, aircraft2Slug, ac1, ac2, navigate])
 
+  const canvasRef = useRef<HTMLDivElement>(null)
+  const statsRef = useRef<HTMLDivElement>(null)
+
   const { data, isLoading, error } = useAircraftData(aircraft1Slug, aircraft2Slug)
 
   return (
@@ -57,19 +60,23 @@ function ComparisonPage() {
 
         {data && (
           <>
-            <ComparisonCanvas
-              aircraft1={data.aircraft1}
-              aircraft2={data.aircraft2}
-            />
-            <CanvasControls />
-            <StatsPanel
-              aircraft1={data.aircraft1}
-              aircraft2={data.aircraft2}
-              aircraft1Slug={aircraft1Slug}
-              aircraft2Slug={aircraft2Slug}
-              onSelectAircraft1={setAircraft1}
-              onSelectAircraft2={setAircraft2}
-            />
+            <div ref={canvasRef}>
+              <ComparisonCanvas
+                aircraft1={data.aircraft1}
+                aircraft2={data.aircraft2}
+              />
+            </div>
+            <CanvasControls canvasRef={canvasRef} statsRef={statsRef} />
+            <div ref={statsRef}>
+              <StatsPanel
+                aircraft1={data.aircraft1}
+                aircraft2={data.aircraft2}
+                aircraft1Slug={aircraft1Slug}
+                aircraft2Slug={aircraft2Slug}
+                onSelectAircraft1={setAircraft1}
+                onSelectAircraft2={setAircraft2}
+              />
+            </div>
             <FunFacts
               aircraft1={data.aircraft1}
               aircraft2={data.aircraft2}
