@@ -1,0 +1,5 @@
+export type ViewMode = "stacked" | "side-by-side" | "overlay"
+export type ViewAngle = "side" | "top"
+export type OverlayAlignment = "nose" | "center" | "tail"
+export type UnitSystem = "metric" | "imperial"
+export type RenderStyle = "blueprint" | "photo"

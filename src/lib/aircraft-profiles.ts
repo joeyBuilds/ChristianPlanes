@@ -1,0 +1,1296 @@
+export interface AircraftProfile {
+  // Nose shape
+  noseStyle: 'standard' | 'pointed' | 'bulbous' | 'drooped' | 'stepped';
+  noseLengthFrac: number;
+  cockpitAngle: number;
+
+  // Upper deck (747 family)
+  upperDeckLengthFrac?: number;
+  upperDeckHeightFrac?: number;
+
+  // Double deck (A380)
+  isDoubleDeck?: boolean;
+
+  // Fuselage
+  fuselageDiameterM: number;
+  tailConeLengthFrac: number;
+  tailUpsweepAngle: number;
+  bellyFairingFrac?: number;
+
+  // Wing (side view)
+  wingPositionFrac: number;
+  wingChordFrac: number;
+  wingSweepDeg: number;
+  wingMountHeight: number;
+  wingThicknessFrac: number;
+  hasWinglets: boolean;
+  hasSharklets: boolean;
+  hasRakedTips: boolean;
+
+  // Engines
+  engineCount: number;
+  engineDiameterM: number;
+  engineMountStyle: 'underwing' | 'rear-fuselage' | 'tail-s-duct' | 'mixed-trijet';
+  engineSpanPositions?: number[];
+  engineForwardOffset?: number;
+  enginePylonLengthFrac?: number;
+
+  // Tail
+  tailStyle: 'conventional' | 'T-tail' | 'cruciform' | 'H-tail' | 'triple-tail';
+  vStabHeightFrac: number;
+  vStabSweepDeg: number;
+  vStabChordFrac: number;
+  hStabSpanFrac: number;
+
+  // Landing gear
+  mainGearHeightFrac: number;
+  noseGearPositionFrac: number;
+  mainGearPositionFrac: number;
+  hasBodyGear?: boolean;
+
+  // Top view specifics
+  wingSpanwiseChordTaper: number;
+}
+
+// Boeing 747 Family Profile
+const boeing747Profile: AircraftProfile = {
+  noseStyle: 'stepped',
+  noseLengthFrac: 0.10,
+  cockpitAngle: 28,
+  upperDeckLengthFrac: 0.40,
+  upperDeckHeightFrac: 0.35,
+  fuselageDiameterM: 6.5,
+  tailConeLengthFrac: 0.12,
+  tailUpsweepAngle: 8,
+  bellyFairingFrac: 0.08,
+  wingPositionFrac: 0.42,
+  wingChordFrac: 0.28,
+  wingSweepDeg: 37.5,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.12,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 4,
+  engineDiameterM: 2.52,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.25, 0.65],
+  engineForwardOffset: 0.05,
+  enginePylonLengthFrac: 0.18,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.28,
+  vStabSweepDeg: 35,
+  vStabChordFrac: 0.14,
+  hStabSpanFrac: 0.42,
+  mainGearHeightFrac: 0.32,
+  noseGearPositionFrac: 0.12,
+  mainGearPositionFrac: 0.46,
+  hasBodyGear: true,
+  wingSpanwiseChordTaper: 0.35,
+};
+
+// Airbus A380 Family Profile
+const airbusA380Profile: AircraftProfile = {
+  noseStyle: 'bulbous',
+  noseLengthFrac: 0.09,
+  cockpitAngle: 25,
+  isDoubleDeck: true,
+  fuselageDiameterM: 7.14,
+  tailConeLengthFrac: 0.10,
+  tailUpsweepAngle: 7,
+  bellyFairingFrac: 0.06,
+  wingPositionFrac: 0.42,
+  wingChordFrac: 0.26,
+  wingSweepDeg: 33.5,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.13,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 4,
+  engineDiameterM: 2.95,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.23, 0.63],
+  engineForwardOffset: 0.04,
+  enginePylonLengthFrac: 0.20,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.35,
+  vStabSweepDeg: 31,
+  vStabChordFrac: 0.16,
+  hStabSpanFrac: 0.48,
+  mainGearHeightFrac: 0.30,
+  noseGearPositionFrac: 0.10,
+  mainGearPositionFrac: 0.44,
+  hasBodyGear: true,
+  wingSpanwiseChordTaper: 0.30,
+};
+
+// Boeing 737 Classic (200-500) Profile
+const boeing737ClassicProfile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.08,
+  cockpitAngle: 32,
+  fuselageDiameterM: 3.76,
+  tailConeLengthFrac: 0.11,
+  tailUpsweepAngle: 10,
+  wingPositionFrac: 0.38,
+  wingChordFrac: 0.22,
+  wingSweepDeg: 25,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.10,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 2,
+  engineDiameterM: 1.47,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.38],
+  engineForwardOffset: 0.08,
+  enginePylonLengthFrac: 0.12,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.32,
+  vStabSweepDeg: 28,
+  vStabChordFrac: 0.11,
+  hStabSpanFrac: 0.38,
+  mainGearHeightFrac: 0.28,
+  noseGearPositionFrac: 0.11,
+  mainGearPositionFrac: 0.38,
+  wingSpanwiseChordTaper: 0.32,
+};
+
+// Boeing 737 NG (600-900ER) Profile
+const boeing737NGProfile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.08,
+  cockpitAngle: 32,
+  fuselageDiameterM: 3.76,
+  tailConeLengthFrac: 0.11,
+  tailUpsweepAngle: 10,
+  wingPositionFrac: 0.38,
+  wingChordFrac: 0.22,
+  wingSweepDeg: 25,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.10,
+  hasWinglets: true,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 2,
+  engineDiameterM: 1.65,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.38],
+  engineForwardOffset: 0.06,
+  enginePylonLengthFrac: 0.14,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.32,
+  vStabSweepDeg: 28,
+  vStabChordFrac: 0.11,
+  hStabSpanFrac: 0.38,
+  mainGearHeightFrac: 0.28,
+  noseGearPositionFrac: 0.11,
+  mainGearPositionFrac: 0.38,
+  wingSpanwiseChordTaper: 0.32,
+};
+
+// Boeing 737 MAX Profile
+const boeing737MAXProfile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.08,
+  cockpitAngle: 32,
+  fuselageDiameterM: 3.76,
+  tailConeLengthFrac: 0.11,
+  tailUpsweepAngle: 10,
+  wingPositionFrac: 0.38,
+  wingChordFrac: 0.22,
+  wingSweepDeg: 25,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.10,
+  hasWinglets: false,
+  hasSharklets: true,
+  hasRakedTips: false,
+  engineCount: 2,
+  engineDiameterM: 1.85,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.38],
+  engineForwardOffset: 0.05,
+  enginePylonLengthFrac: 0.15,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.32,
+  vStabSweepDeg: 28,
+  vStabChordFrac: 0.11,
+  hStabSpanFrac: 0.38,
+  mainGearHeightFrac: 0.28,
+  noseGearPositionFrac: 0.11,
+  mainGearPositionFrac: 0.38,
+  wingSpanwiseChordTaper: 0.32,
+};
+
+// Airbus A320 Family Profile
+const airbusA320Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.09,
+  cockpitAngle: 30,
+  fuselageDiameterM: 3.95,
+  tailConeLengthFrac: 0.10,
+  tailUpsweepAngle: 9,
+  wingPositionFrac: 0.39,
+  wingChordFrac: 0.23,
+  wingSweepDeg: 25,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.11,
+  hasWinglets: true,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 2,
+  engineDiameterM: 1.72,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.36],
+  engineForwardOffset: 0.04,
+  enginePylonLengthFrac: 0.14,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.33,
+  vStabSweepDeg: 28,
+  vStabChordFrac: 0.12,
+  hStabSpanFrac: 0.40,
+  mainGearHeightFrac: 0.29,
+  noseGearPositionFrac: 0.12,
+  mainGearPositionFrac: 0.39,
+  wingSpanwiseChordTaper: 0.33,
+};
+
+// Airbus A220 Family Profile (CS100/CS300)
+const airbusA220Profile: AircraftProfile = {
+  noseStyle: 'bulbous',
+  noseLengthFrac: 0.09,
+  cockpitAngle: 28,
+  fuselageDiameterM: 3.70,
+  tailConeLengthFrac: 0.10,
+  tailUpsweepAngle: 9,
+  wingPositionFrac: 0.38,
+  wingChordFrac: 0.23,
+  wingSweepDeg: 27.5,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.10,
+  hasWinglets: true,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 2,
+  engineDiameterM: 1.57,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.37],
+  engineForwardOffset: 0.05,
+  enginePylonLengthFrac: 0.13,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.31,
+  vStabSweepDeg: 30,
+  vStabChordFrac: 0.11,
+  hStabSpanFrac: 0.39,
+  mainGearHeightFrac: 0.29,
+  noseGearPositionFrac: 0.11,
+  mainGearPositionFrac: 0.38,
+  wingSpanwiseChordTaper: 0.34,
+};
+
+// Boeing 777 Profile
+const boeing777Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.10,
+  cockpitAngle: 30,
+  fuselageDiameterM: 6.2,
+  tailConeLengthFrac: 0.12,
+  tailUpsweepAngle: 8,
+  wingPositionFrac: 0.40,
+  wingChordFrac: 0.24,
+  wingSweepDeg: 35,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.12,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 2,
+  engineDiameterM: 3.06,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.32],
+  engineForwardOffset: 0.03,
+  enginePylonLengthFrac: 0.16,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.30,
+  vStabSweepDeg: 32,
+  vStabChordFrac: 0.13,
+  hStabSpanFrac: 0.44,
+  mainGearHeightFrac: 0.30,
+  noseGearPositionFrac: 0.13,
+  mainGearPositionFrac: 0.42,
+  hasBodyGear: true,
+  wingSpanwiseChordTaper: 0.28,
+};
+
+// Boeing 777-200LR / 300ER (with raked wingtips)
+const boeing777RakedProfile: AircraftProfile = {
+  ...boeing777Profile,
+  hasRakedTips: true,
+};
+
+// Boeing 777X Profile (777-8, 777-9)
+const boeing777XProfile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.10,
+  cockpitAngle: 30,
+  fuselageDiameterM: 6.2,
+  tailConeLengthFrac: 0.12,
+  tailUpsweepAngle: 8,
+  wingPositionFrac: 0.40,
+  wingChordFrac: 0.24,
+  wingSweepDeg: 35,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.12,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: true,
+  engineCount: 2,
+  engineDiameterM: 3.43,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.32],
+  engineForwardOffset: 0.02,
+  enginePylonLengthFrac: 0.17,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.30,
+  vStabSweepDeg: 32,
+  vStabChordFrac: 0.13,
+  hStabSpanFrac: 0.44,
+  mainGearHeightFrac: 0.30,
+  noseGearPositionFrac: 0.13,
+  mainGearPositionFrac: 0.42,
+  hasBodyGear: true,
+  wingSpanwiseChordTaper: 0.28,
+};
+
+// Boeing 787 Family Profile
+const boeing787Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.10,
+  cockpitAngle: 28,
+  fuselageDiameterM: 5.77,
+  tailConeLengthFrac: 0.11,
+  tailUpsweepAngle: 9,
+  wingPositionFrac: 0.40,
+  wingChordFrac: 0.25,
+  wingSweepDeg: 32,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.12,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: true,
+  engineCount: 2,
+  engineDiameterM: 2.69,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.35],
+  engineForwardOffset: 0.04,
+  enginePylonLengthFrac: 0.15,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.31,
+  vStabSweepDeg: 33,
+  vStabChordFrac: 0.13,
+  hStabSpanFrac: 0.42,
+  mainGearHeightFrac: 0.30,
+  noseGearPositionFrac: 0.12,
+  mainGearPositionFrac: 0.41,
+  wingSpanwiseChordTaper: 0.30,
+};
+
+// Boeing 757 Family Profile
+const boeing757Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.09,
+  cockpitAngle: 32,
+  fuselageDiameterM: 3.54,
+  tailConeLengthFrac: 0.11,
+  tailUpsweepAngle: 11,
+  wingPositionFrac: 0.40,
+  wingChordFrac: 0.25,
+  wingSweepDeg: 32,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.11,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 2,
+  engineDiameterM: 2.24,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.36],
+  engineForwardOffset: 0.05,
+  enginePylonLengthFrac: 0.15,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.35,
+  vStabSweepDeg: 30,
+  vStabChordFrac: 0.12,
+  hStabSpanFrac: 0.40,
+  mainGearHeightFrac: 0.32,
+  noseGearPositionFrac: 0.11,
+  mainGearPositionFrac: 0.41,
+  wingSpanwiseChordTaper: 0.30,
+};
+
+// Boeing 767 Family Profile
+const boeing767Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.09,
+  cockpitAngle: 30,
+  fuselageDiameterM: 5.03,
+  tailConeLengthFrac: 0.11,
+  tailUpsweepAngle: 9,
+  wingPositionFrac: 0.40,
+  wingChordFrac: 0.24,
+  wingSweepDeg: 31.8,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.11,
+  hasWinglets: true,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 2,
+  engineDiameterM: 2.38,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.35],
+  engineForwardOffset: 0.05,
+  enginePylonLengthFrac: 0.15,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.32,
+  vStabSweepDeg: 31,
+  vStabChordFrac: 0.12,
+  hStabSpanFrac: 0.42,
+  mainGearHeightFrac: 0.29,
+  noseGearPositionFrac: 0.12,
+  mainGearPositionFrac: 0.40,
+  wingSpanwiseChordTaper: 0.32,
+};
+
+// Airbus A330 Family Profile
+const airbusA330Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.10,
+  cockpitAngle: 28,
+  fuselageDiameterM: 5.64,
+  tailConeLengthFrac: 0.11,
+  tailUpsweepAngle: 8,
+  wingPositionFrac: 0.40,
+  wingChordFrac: 0.24,
+  wingSweepDeg: 30.5,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.11,
+  hasWinglets: true,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 2,
+  engineDiameterM: 2.80,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.34],
+  engineForwardOffset: 0.04,
+  enginePylonLengthFrac: 0.16,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.31,
+  vStabSweepDeg: 30,
+  vStabChordFrac: 0.13,
+  hStabSpanFrac: 0.43,
+  mainGearHeightFrac: 0.29,
+  noseGearPositionFrac: 0.13,
+  mainGearPositionFrac: 0.41,
+  wingSpanwiseChordTaper: 0.31,
+};
+
+// Airbus A340 Family Profile
+const airbusA340Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.10,
+  cockpitAngle: 28,
+  fuselageDiameterM: 5.64,
+  tailConeLengthFrac: 0.11,
+  tailUpsweepAngle: 8,
+  wingPositionFrac: 0.40,
+  wingChordFrac: 0.24,
+  wingSweepDeg: 30.5,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.11,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 4,
+  engineDiameterM: 2.27,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.28, 0.62],
+  engineForwardOffset: 0.04,
+  enginePylonLengthFrac: 0.15,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.31,
+  vStabSweepDeg: 30,
+  vStabChordFrac: 0.13,
+  hStabSpanFrac: 0.43,
+  mainGearHeightFrac: 0.29,
+  noseGearPositionFrac: 0.13,
+  mainGearPositionFrac: 0.41,
+  hasBodyGear: true,
+  wingSpanwiseChordTaper: 0.31,
+};
+
+// Airbus A350 Family Profile
+const airbusA350Profile: AircraftProfile = {
+  noseStyle: 'bulbous',
+  noseLengthFrac: 0.10,
+  cockpitAngle: 26,
+  fuselageDiameterM: 5.96,
+  tailConeLengthFrac: 0.11,
+  tailUpsweepAngle: 8,
+  wingPositionFrac: 0.40,
+  wingChordFrac: 0.24,
+  wingSweepDeg: 32,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.12,
+  hasWinglets: false,
+  hasSharklets: true,
+  hasRakedTips: true,
+  engineCount: 2,
+  engineDiameterM: 2.79,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.34],
+  engineForwardOffset: 0.03,
+  enginePylonLengthFrac: 0.16,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.32,
+  vStabSweepDeg: 33,
+  vStabChordFrac: 0.13,
+  hStabSpanFrac: 0.43,
+  mainGearHeightFrac: 0.30,
+  noseGearPositionFrac: 0.13,
+  mainGearPositionFrac: 0.41,
+  wingSpanwiseChordTaper: 0.30,
+};
+
+// Airbus A300/A310 Family Profile
+const airbusA300Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.10,
+  cockpitAngle: 28,
+  fuselageDiameterM: 5.64,
+  tailConeLengthFrac: 0.11,
+  tailUpsweepAngle: 8,
+  wingPositionFrac: 0.40,
+  wingChordFrac: 0.24,
+  wingSweepDeg: 30,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.10,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 2,
+  engineDiameterM: 2.16,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.35],
+  engineForwardOffset: 0.06,
+  enginePylonLengthFrac: 0.14,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.30,
+  vStabSweepDeg: 32,
+  vStabChordFrac: 0.12,
+  hStabSpanFrac: 0.42,
+  mainGearHeightFrac: 0.28,
+  noseGearPositionFrac: 0.13,
+  mainGearPositionFrac: 0.40,
+  wingSpanwiseChordTaper: 0.32,
+};
+
+// Boeing 727 Family Profile (Trijet with T-tail)
+const boeing727Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.08,
+  cockpitAngle: 32,
+  fuselageDiameterM: 3.76,
+  tailConeLengthFrac: 0.10,
+  tailUpsweepAngle: 9,
+  wingPositionFrac: 0.38,
+  wingChordFrac: 0.22,
+  wingSweepDeg: 32,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.09,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 3,
+  engineDiameterM: 1.57,
+  engineMountStyle: 'tail-s-duct',
+  engineSpanPositions: [0.38],
+  engineForwardOffset: 0.08,
+  enginePylonLengthFrac: 0.12,
+  tailStyle: 'T-tail',
+  vStabHeightFrac: 0.38,
+  vStabSweepDeg: 35,
+  vStabChordFrac: 0.10,
+  hStabSpanFrac: 0.35,
+  mainGearHeightFrac: 0.28,
+  noseGearPositionFrac: 0.10,
+  mainGearPositionFrac: 0.38,
+  wingSpanwiseChordTaper: 0.30,
+};
+
+// McDonnell Douglas DC-10/MD-11 Family Profile
+const dc10Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.10,
+  cockpitAngle: 28,
+  fuselageDiameterM: 6.14,
+  tailConeLengthFrac: 0.12,
+  tailUpsweepAngle: 8,
+  wingPositionFrac: 0.40,
+  wingChordFrac: 0.24,
+  wingSweepDeg: 35,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.11,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 3,
+  engineDiameterM: 2.44,
+  engineMountStyle: 'mixed-trijet',
+  engineSpanPositions: [0.35],
+  engineForwardOffset: 0.05,
+  enginePylonLengthFrac: 0.15,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.30,
+  vStabSweepDeg: 33,
+  vStabChordFrac: 0.13,
+  hStabSpanFrac: 0.42,
+  mainGearHeightFrac: 0.28,
+  noseGearPositionFrac: 0.13,
+  mainGearPositionFrac: 0.41,
+  hasBodyGear: true,
+  wingSpanwiseChordTaper: 0.30,
+};
+
+// MD-11 (Extended tail cone variant)
+const md11Profile: AircraftProfile = {
+  ...dc10Profile,
+  tailConeLengthFrac: 0.15,
+  hasWinglets: true,
+};
+
+// Lockheed L-1011 TriStar Profile
+const l1011Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.10,
+  cockpitAngle: 28,
+  fuselageDiameterM: 6.14,
+  tailConeLengthFrac: 0.11,
+  tailUpsweepAngle: 8,
+  wingPositionFrac: 0.40,
+  wingChordFrac: 0.24,
+  wingSweepDeg: 35,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.11,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 3,
+  engineDiameterM: 2.37,
+  engineMountStyle: 'tail-s-duct',
+  engineSpanPositions: [0.35],
+  engineForwardOffset: 0.05,
+  enginePylonLengthFrac: 0.15,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.30,
+  vStabSweepDeg: 33,
+  vStabChordFrac: 0.13,
+  hStabSpanFrac: 0.42,
+  mainGearHeightFrac: 0.28,
+  noseGearPositionFrac: 0.13,
+  mainGearPositionFrac: 0.41,
+  hasBodyGear: true,
+  wingSpanwiseChordTaper: 0.30,
+};
+
+// Concorde Supersonic Profile
+const concordeProfile: AircraftProfile = {
+  noseStyle: 'drooped',
+  noseLengthFrac: 0.14,
+  cockpitAngle: 45,
+  fuselageDiameterM: 2.88,
+  tailConeLengthFrac: 0.10,
+  tailUpsweepAngle: 12,
+  wingPositionFrac: 0.45,
+  wingChordFrac: 0.30,
+  wingSweepDeg: 63,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.09,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 4,
+  engineDiameterM: 1.19,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.30, 0.70],
+  engineForwardOffset: 0.0,
+  enginePylonLengthFrac: 0.10,
+  tailStyle: 'cruciform',
+  vStabHeightFrac: 0.24,
+  vStabSweepDeg: 55,
+  vStabChordFrac: 0.12,
+  hStabSpanFrac: 0.30,
+  mainGearHeightFrac: 0.26,
+  noseGearPositionFrac: 0.14,
+  mainGearPositionFrac: 0.45,
+  wingSpanwiseChordTaper: 0.25,
+};
+
+// Boeing 707 Family Profile
+const boeing707Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.09,
+  cockpitAngle: 32,
+  fuselageDiameterM: 3.76,
+  tailConeLengthFrac: 0.11,
+  tailUpsweepAngle: 10,
+  wingPositionFrac: 0.38,
+  wingChordFrac: 0.23,
+  wingSweepDeg: 35,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.09,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 4,
+  engineDiameterM: 1.39,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.28, 0.62],
+  engineForwardOffset: 0.07,
+  enginePylonLengthFrac: 0.12,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.33,
+  vStabSweepDeg: 35,
+  vStabChordFrac: 0.11,
+  hStabSpanFrac: 0.38,
+  mainGearHeightFrac: 0.27,
+  noseGearPositionFrac: 0.10,
+  mainGearPositionFrac: 0.37,
+  wingSpanwiseChordTaper: 0.32,
+};
+
+// Boeing 717 / Douglas DC-9 Family Profile (Rear-mounted T-tail)
+const dc9Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.08,
+  cockpitAngle: 35,
+  fuselageDiameterM: 3.24,
+  tailConeLengthFrac: 0.10,
+  tailUpsweepAngle: 10,
+  wingPositionFrac: 0.38,
+  wingChordFrac: 0.21,
+  wingSweepDeg: 24.5,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.09,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 2,
+  engineDiameterM: 1.52,
+  engineMountStyle: 'rear-fuselage',
+  engineSpanPositions: [0.45],
+  engineForwardOffset: 0.0,
+  enginePylonLengthFrac: 0.12,
+  tailStyle: 'T-tail',
+  vStabHeightFrac: 0.36,
+  vStabSweepDeg: 32,
+  vStabChordFrac: 0.10,
+  hStabSpanFrac: 0.36,
+  mainGearHeightFrac: 0.28,
+  noseGearPositionFrac: 0.10,
+  mainGearPositionFrac: 0.38,
+  wingSpanwiseChordTaper: 0.30,
+};
+
+// Bombardier CRJ Series Profile (Rear-mounted T-tail)
+const crjProfile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.09,
+  cockpitAngle: 35,
+  fuselageDiameterM: 2.69,
+  tailConeLengthFrac: 0.10,
+  tailUpsweepAngle: 11,
+  wingPositionFrac: 0.38,
+  wingChordFrac: 0.21,
+  wingSweepDeg: 26.5,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.08,
+  hasWinglets: true,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 2,
+  engineDiameterM: 1.22,
+  engineMountStyle: 'rear-fuselage',
+  engineSpanPositions: [0.45],
+  engineForwardOffset: 0.0,
+  enginePylonLengthFrac: 0.11,
+  tailStyle: 'T-tail',
+  vStabHeightFrac: 0.38,
+  vStabSweepDeg: 30,
+  vStabChordFrac: 0.10,
+  hStabSpanFrac: 0.35,
+  mainGearHeightFrac: 0.27,
+  noseGearPositionFrac: 0.10,
+  mainGearPositionFrac: 0.37,
+  wingSpanwiseChordTaper: 0.32,
+};
+
+// Embraer E-Jet Family Profile
+const embraerEJetProfile: AircraftProfile = {
+  noseStyle: 'bulbous',
+  noseLengthFrac: 0.09,
+  cockpitAngle: 30,
+  fuselageDiameterM: 3.01,
+  tailConeLengthFrac: 0.10,
+  tailUpsweepAngle: 10,
+  wingPositionFrac: 0.38,
+  wingChordFrac: 0.21,
+  wingSweepDeg: 26,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.08,
+  hasWinglets: true,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 2,
+  engineDiameterM: 1.42,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.37],
+  engineForwardOffset: 0.05,
+  enginePylonLengthFrac: 0.12,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.33,
+  vStabSweepDeg: 28,
+  vStabChordFrac: 0.10,
+  hStabSpanFrac: 0.37,
+  mainGearHeightFrac: 0.28,
+  noseGearPositionFrac: 0.11,
+  mainGearPositionFrac: 0.38,
+  wingSpanwiseChordTaper: 0.33,
+};
+
+// Antonov AN-124 Profile (High-wing cargo)
+const an124Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.08,
+  cockpitAngle: 25,
+  fuselageDiameterM: 6.40,
+  tailConeLengthFrac: 0.12,
+  tailUpsweepAngle: 7,
+  wingPositionFrac: 0.40,
+  wingChordFrac: 0.26,
+  wingSweepDeg: 28,
+  wingMountHeight: 0.9,
+  wingThicknessFrac: 0.13,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 4,
+  engineDiameterM: 2.44,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.28, 0.62],
+  engineForwardOffset: 0.04,
+  enginePylonLengthFrac: 0.16,
+  tailStyle: 'T-tail',
+  vStabHeightFrac: 0.35,
+  vStabSweepDeg: 28,
+  vStabChordFrac: 0.14,
+  hStabSpanFrac: 0.44,
+  mainGearHeightFrac: 0.32,
+  noseGearPositionFrac: 0.09,
+  mainGearPositionFrac: 0.42,
+  wingSpanwiseChordTaper: 0.28,
+};
+
+// Antonov AN-225 Profile (6 engines, H-tail)
+const an225Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.07,
+  cockpitAngle: 24,
+  fuselageDiameterM: 6.40,
+  tailConeLengthFrac: 0.10,
+  tailUpsweepAngle: 6,
+  wingPositionFrac: 0.40,
+  wingChordFrac: 0.27,
+  wingSweepDeg: 28,
+  wingMountHeight: 0.9,
+  wingThicknessFrac: 0.14,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 6,
+  engineDiameterM: 2.44,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.22, 0.47, 0.68],
+  engineForwardOffset: 0.04,
+  enginePylonLengthFrac: 0.16,
+  tailStyle: 'H-tail',
+  vStabHeightFrac: 0.32,
+  vStabSweepDeg: 28,
+  vStabChordFrac: 0.13,
+  hStabSpanFrac: 0.46,
+  mainGearHeightFrac: 0.32,
+  noseGearPositionFrac: 0.08,
+  mainGearPositionFrac: 0.41,
+  wingSpanwiseChordTaper: 0.28,
+};
+
+// Lockheed C-5 Galaxy Profile (High-wing military)
+const c5GalaxyProfile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.08,
+  cockpitAngle: 22,
+  fuselageDiameterM: 6.56,
+  tailConeLengthFrac: 0.10,
+  tailUpsweepAngle: 6,
+  wingPositionFrac: 0.40,
+  wingChordFrac: 0.26,
+  wingSweepDeg: 32,
+  wingMountHeight: 0.9,
+  wingThicknessFrac: 0.12,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 4,
+  engineDiameterM: 2.44,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.28, 0.62],
+  engineForwardOffset: 0.03,
+  enginePylonLengthFrac: 0.16,
+  tailStyle: 'T-tail',
+  vStabHeightFrac: 0.34,
+  vStabSweepDeg: 30,
+  vStabChordFrac: 0.14,
+  hStabSpanFrac: 0.43,
+  mainGearHeightFrac: 0.32,
+  noseGearPositionFrac: 0.10,
+  mainGearPositionFrac: 0.42,
+  wingSpanwiseChordTaper: 0.26,
+};
+
+// Tupolev TU-154 Profile (Trijet with T-tail)
+const tu154Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.08,
+  cockpitAngle: 32,
+  fuselageDiameterM: 3.80,
+  tailConeLengthFrac: 0.11,
+  tailUpsweepAngle: 9,
+  wingPositionFrac: 0.38,
+  wingChordFrac: 0.22,
+  wingSweepDeg: 32,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.09,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 3,
+  engineDiameterM: 1.83,
+  engineMountStyle: 'tail-s-duct',
+  engineSpanPositions: [0.38],
+  engineForwardOffset: 0.07,
+  enginePylonLengthFrac: 0.12,
+  tailStyle: 'T-tail',
+  vStabHeightFrac: 0.37,
+  vStabSweepDeg: 35,
+  vStabChordFrac: 0.10,
+  hStabSpanFrac: 0.36,
+  mainGearHeightFrac: 0.29,
+  noseGearPositionFrac: 0.10,
+  mainGearPositionFrac: 0.38,
+  wingSpanwiseChordTaper: 0.30,
+};
+
+// Sukhoi SuperJet SSJ 100 Profile
+const ssukhoi100Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.09,
+  cockpitAngle: 28,
+  fuselageDiameterM: 3.34,
+  tailConeLengthFrac: 0.10,
+  tailUpsweepAngle: 10,
+  wingPositionFrac: 0.38,
+  wingChordFrac: 0.21,
+  wingSweepDeg: 27,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.08,
+  hasWinglets: true,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 2,
+  engineDiameterM: 1.42,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.37],
+  engineForwardOffset: 0.04,
+  enginePylonLengthFrac: 0.12,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.32,
+  vStabSweepDeg: 30,
+  vStabChordFrac: 0.10,
+  hStabSpanFrac: 0.37,
+  mainGearHeightFrac: 0.28,
+  noseGearPositionFrac: 0.11,
+  mainGearPositionFrac: 0.38,
+  wingSpanwiseChordTaper: 0.33,
+};
+
+// Comac ARJ21 Profile (Rear-mounted, T-tail)
+const arj21Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.09,
+  cockpitAngle: 32,
+  fuselageDiameterM: 3.16,
+  tailConeLengthFrac: 0.10,
+  tailUpsweepAngle: 11,
+  wingPositionFrac: 0.38,
+  wingChordFrac: 0.20,
+  wingSweepDeg: 24,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.08,
+  hasWinglets: true,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 2,
+  engineDiameterM: 1.19,
+  engineMountStyle: 'rear-fuselage',
+  engineSpanPositions: [0.45],
+  engineForwardOffset: 0.0,
+  enginePylonLengthFrac: 0.11,
+  tailStyle: 'T-tail',
+  vStabHeightFrac: 0.36,
+  vStabSweepDeg: 32,
+  vStabChordFrac: 0.10,
+  hStabSpanFrac: 0.36,
+  mainGearHeightFrac: 0.27,
+  noseGearPositionFrac: 0.10,
+  mainGearPositionFrac: 0.37,
+  wingSpanwiseChordTaper: 0.31,
+};
+
+// Douglas DC-8 Profile (similar to 707)
+const dc8Profile: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.09,
+  cockpitAngle: 32,
+  fuselageDiameterM: 3.76,
+  tailConeLengthFrac: 0.11,
+  tailUpsweepAngle: 10,
+  wingPositionFrac: 0.38,
+  wingChordFrac: 0.23,
+  wingSweepDeg: 32,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.09,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 4,
+  engineDiameterM: 1.42,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.28, 0.62],
+  engineForwardOffset: 0.06,
+  enginePylonLengthFrac: 0.12,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.32,
+  vStabSweepDeg: 35,
+  vStabChordFrac: 0.11,
+  hStabSpanFrac: 0.38,
+  mainGearHeightFrac: 0.27,
+  noseGearPositionFrac: 0.10,
+  mainGearPositionFrac: 0.37,
+  wingSpanwiseChordTaper: 0.32,
+};
+
+// Slug to Profile Mapping
+const AIRCRAFT_PROFILES: Record<string, AircraftProfile> = {
+  // Concorde
+  'concorde': concordeProfile,
+
+  // Airbus A220
+  'a220-100': airbusA220Profile,
+  'a220-300': airbusA220Profile,
+
+  // Airbus A320 Family
+  'a318': airbusA320Profile,
+  'a319': airbusA320Profile,
+  'a319neo': airbusA320Profile,
+  'a320-200': airbusA320Profile,
+  'a320neo': airbusA320Profile,
+  'a321-200': airbusA320Profile,
+  'a321lr': airbusA320Profile,
+  'a321neo': airbusA320Profile,
+  'a321xlr': airbusA320Profile,
+
+  // Airbus A300 Family
+  'a300-600': airbusA300Profile,
+  'a310-300': airbusA300Profile,
+  'a300-600f': airbusA300Profile,
+
+  // Airbus A330 Family
+  'a330-200': airbusA330Profile,
+  'a330-300': airbusA330Profile,
+  'a330-800neo': airbusA330Profile,
+  'a330-900neo': airbusA330Profile,
+
+  // Airbus A340 Family
+  'a340-200': airbusA340Profile,
+  'a340-300x': airbusA340Profile,
+  'a340-500': airbusA340Profile,
+  'a340-600': airbusA340Profile,
+
+  // Airbus A350 Family
+  'a350-800': airbusA350Profile,
+  'a350-900': airbusA350Profile,
+  'a350-900ulr': airbusA350Profile,
+  'a350-1000': airbusA350Profile,
+
+  // Airbus A380
+  'a380-800': airbusA380Profile,
+  'a380-800f': airbusA380Profile,
+
+  // Boeing 707
+  '707-320b': boeing707Profile,
+
+  // Boeing 717
+  '717-200hgw': dc9Profile,
+
+  // Boeing 727
+  '727-200adv': boeing727Profile,
+
+  // Boeing 737 Classic
+  '737-200': boeing737ClassicProfile,
+  '737-300': boeing737ClassicProfile,
+  '737-400': boeing737ClassicProfile,
+  '737-500': boeing737ClassicProfile,
+
+  // Boeing 737 NG
+  '737-600': boeing737NGProfile,
+  '737-700': boeing737NGProfile,
+  '737-800': boeing737NGProfile,
+  '737-900': boeing737NGProfile,
+  '737-900er': boeing737NGProfile,
+
+  // Boeing 737 MAX
+  '737 max 7': boeing737MAXProfile,
+  '737 max 8': boeing737MAXProfile,
+  '737 max 9': boeing737MAXProfile,
+  '737 max 10': boeing737MAXProfile,
+
+  // Boeing 747
+  '747-400': boeing747Profile,
+  '747-400er': boeing747Profile,
+  '747-8i': boeing747Profile,
+  '747-400f': boeing747Profile,
+  '747-400erf': boeing747Profile,
+  '747-8f': boeing747Profile,
+
+  // Boeing 757
+  '757-200': boeing757Profile,
+  '757-300': boeing757Profile,
+
+  // Boeing 767
+  '767-200er': boeing767Profile,
+  '767-300er': boeing767Profile,
+  '767-400er': boeing767Profile,
+
+  // Boeing 777
+  '777-200': boeing777Profile,
+  '777-200er': boeing777Profile,
+  '777-200lr worldliner': boeing777RakedProfile,
+  '777-300': boeing777Profile,
+  '777-300er': boeing777RakedProfile,
+  '777-8': boeing777XProfile,
+  '777-9': boeing777XProfile,
+
+  // Boeing 787
+  '787-8': boeing787Profile,
+  '787-9': boeing787Profile,
+  '787-10': boeing787Profile,
+
+  // Bombardier CRJ
+  'crj700': crjProfile,
+  'crj900': crjProfile,
+  'crj1000': crjProfile,
+
+  // Comac C919 Series (using ARJ21 as base - regional jet family)
+  'cs100': airbusA220Profile,
+  'cs300': airbusA220Profile,
+
+  // Comac ARJ21
+  'arj21-700': arj21Profile,
+  'arj21-700er': arj21Profile,
+  'arj21-900': arj21Profile,
+  'arj21-900er': arj21Profile,
+
+  // Douglas DC-8
+  'dc-8-61': dc8Profile,
+
+  // Embraer E-Jets
+  'e170': embraerEJetProfile,
+  'e175': embraerEJetProfile,
+  'e175-e2': embraerEJetProfile,
+  'e190': embraerEJetProfile,
+  'e190-e2': embraerEJetProfile,
+  'e195': embraerEJetProfile,
+  'e195-e2': embraerEJetProfile,
+
+  // Lockheed L-1011
+  'l-1011 tristar 500': l1011Profile,
+
+  // Lockheed C-5 Galaxy
+  'c-5 galaxy': c5GalaxyProfile,
+
+  // Douglas DC-9
+  'dc-9-30': dc9Profile,
+
+  // McDonnell Douglas
+  'dc-10-30': dc10Profile,
+  'md-11': md11Profile,
+
+  // Sukhoi SSJ100
+  'ssj 100 95': ssukhoi100Profile,
+  'ssj 100 95lr': ssukhoi100Profile,
+
+  // Tupolev
+  'tu-154m': tu154Profile,
+
+  // Antonov
+  'an-124': an124Profile,
+  'an-225': an225Profile,
+};
+
+// Default fallback profile for unmapped aircraft
+const DEFAULT_PROFILE: AircraftProfile = {
+  noseStyle: 'standard',
+  noseLengthFrac: 0.10,
+  cockpitAngle: 30,
+  fuselageDiameterM: 4.0,
+  tailConeLengthFrac: 0.11,
+  tailUpsweepAngle: 9,
+  wingPositionFrac: 0.40,
+  wingChordFrac: 0.23,
+  wingSweepDeg: 30,
+  wingMountHeight: 0.0,
+  wingThicknessFrac: 0.10,
+  hasWinglets: false,
+  hasSharklets: false,
+  hasRakedTips: false,
+  engineCount: 2,
+  engineDiameterM: 2.0,
+  engineMountStyle: 'underwing',
+  engineSpanPositions: [0.35],
+  engineForwardOffset: 0.05,
+  enginePylonLengthFrac: 0.14,
+  tailStyle: 'conventional',
+  vStabHeightFrac: 0.31,
+  vStabSweepDeg: 30,
+  vStabChordFrac: 0.12,
+  hStabSpanFrac: 0.41,
+  mainGearHeightFrac: 0.29,
+  noseGearPositionFrac: 0.12,
+  mainGearPositionFrac: 0.40,
+  wingSpanwiseChordTaper: 0.32,
+};
+
+export function getAircraftProfile(slug: string): AircraftProfile {
+  return AIRCRAFT_PROFILES[slug.toLowerCase()] || DEFAULT_PROFILE;
+}
