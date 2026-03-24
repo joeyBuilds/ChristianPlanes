@@ -133,7 +133,7 @@ function RulerGrid({ width, height, pixelsPerMeter, groundY, isPhoto }: {
 
 export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps) {
   const transformRef = useRef<any>(null)
-  const { viewMode, viewAngle, renderStyle, ghostAircraftSlug } = useComparisonStore()
+  const { viewMode, viewAngle, renderStyle, ghostAircraftSlug, stackAlignment } = useComparisonStore()
 
   // Auto-fallback: photo mode only works for side view
   // Overlay mode forces blueprint — photos have inconsistent cropping that breaks alignment
@@ -176,10 +176,25 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
       const ac1Y = ac2Y + sil2.heightM * pixelsPerMeter + vertGapPx
       const groundY = ac1Y + sil1.heightM * pixelsPerMeter
 
+      // Horizontal alignment offsets
+      const maxWidthPx = maxWidth * pixelsPerMeter
+      const ac1WidthPx = sil1.widthM * pixelsPerMeter
+      const ac2WidthPx = sil2.widthM * pixelsPerMeter
+
+      let ac1X = startX
+      let ac2X = startX
+      if (stackAlignment === 'center') {
+        ac1X = startX + (maxWidthPx - ac1WidthPx) / 2
+        ac2X = startX + (maxWidthPx - ac2WidthPx) / 2
+      } else if (stackAlignment === 'right') {
+        ac1X = startX + (maxWidthPx - ac1WidthPx)
+        ac2X = startX + (maxWidthPx - ac2WidthPx)
+      }
+
       return {
         pixelsPerMeter, canvasWidth, canvasHeight, groundY,
-        ac1: { x: startX, y: ac1Y, opacity: 1 },
-        ac2: { x: startX, y: ac2Y, opacity: 1 },
+        ac1: { x: ac1X, y: ac1Y, opacity: 1 },
+        ac2: { x: ac2X, y: ac2Y, opacity: 1 },
         refX: startX,
       }
     } else if (viewMode === 'side-by-side') {
@@ -219,7 +234,7 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
         refX: startX + maxWidth * pixelsPerMeter + 20,
       }
     }
-  }, [sil1, sil2, viewMode])
+  }, [sil1, sil2, viewMode, stackAlignment])
 
   const isPhotoMode = effectiveRenderStyle === 'photo'
   const isOverlay = viewMode === 'overlay'

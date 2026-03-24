@@ -8,12 +8,17 @@ interface ExportButtonProps {
   statsRef: RefObject<HTMLDivElement | null>
 }
 
+const PIXEL_RATIO = 4 // 4× for crisp exports
+
 export function ExportButton({ canvasRef, statsRef }: ExportButtonProps) {
   const [open, setOpen] = useState(false)
+  const [includeCanvas, setIncludeCanvas] = useState(true)
   const [includeStats, setIncludeStats] = useState(false)
   const [includeControls, setIncludeControls] = useState(false)
   const [exporting, setExporting] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  const nothingSelected = !includeCanvas && !includeStats && !includeControls
 
   // Close on outside click
   useEffect(() => {
@@ -27,16 +32,38 @@ export function ExportButton({ canvasRef, statsRef }: ExportButtonProps) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open])
 
+  function getBgColor() {
+    return getComputedStyle(document.documentElement)
+      .getPropertyValue('--background')
+      .trim() || '#0a0a0a'
+  }
+
+  async function captureElement(el: HTMLElement): Promise<HTMLCanvasElement> {
+    // Double-render trick: first call primes font/image caches, second gets clean output
+    await toPng(el, { cacheBust: true, pixelRatio: PIXEL_RATIO, backgroundColor: getBgColor() })
+    const dataUrl = await toPng(el, { cacheBust: true, pixelRatio: PIXEL_RATIO, backgroundColor: getBgColor() })
+    const img = await loadImage(dataUrl)
+    const cvs = document.createElement('canvas')
+    cvs.width = img.width
+    cvs.height = img.height
+    const ctx = cvs.getContext('2d')!
+    ctx.drawImage(img, 0, 0)
+    return cvs
+  }
+
   async function handleExport() {
-    if (!canvasRef.current) return
     setExporting(true)
 
     try {
-      // Build list of elements to capture
-      const elements: HTMLElement[] = [canvasRef.current]
+      // Build ordered list of elements to capture
+      const elements: HTMLElement[] = []
 
-      if (includeControls) {
-        // The controls bar is the next sibling of the canvas container
+      if (includeCanvas && canvasRef.current) {
+        elements.push(canvasRef.current)
+      }
+
+      if (includeControls && canvasRef.current) {
+        // The controls bar is the sibling after the canvas container div
         const controlsEl = canvasRef.current.nextElementSibling as HTMLElement | null
         if (controlsEl) elements.push(controlsEl)
       }
@@ -45,72 +72,48 @@ export function ExportButton({ canvasRef, statsRef }: ExportButtonProps) {
         elements.push(statsRef.current)
       }
 
+      if (elements.length === 0) return
+
       if (elements.length === 1) {
-        // Single element — direct capture
-        const dataUrl = await toPng(elements[0], {
-          cacheBust: true,
-          pixelRatio: 2,
-          backgroundColor: getComputedStyle(document.documentElement)
-            .getPropertyValue('--background')
-            .trim() || '#0a0a0a',
-        })
+        // Single element — direct high-res capture (double-render for quality)
+        await toPng(elements[0], { cacheBust: true, pixelRatio: PIXEL_RATIO, backgroundColor: getBgColor() })
+        const dataUrl = await toPng(elements[0], { cacheBust: true, pixelRatio: PIXEL_RATIO, backgroundColor: getBgColor() })
         downloadImage(dataUrl)
       } else {
         // Multiple elements — capture each and stitch vertically
         const canvases: HTMLCanvasElement[] = []
-        const gap = 16 // px gap between sections
-
         for (const el of elements) {
-          const dataUrl = await toPng(el, {
-            cacheBust: true,
-            pixelRatio: 2,
-            backgroundColor: getComputedStyle(document.documentElement)
-              .getPropertyValue('--background')
-              .trim() || '#0a0a0a',
-          })
-          const img = await loadImage(dataUrl)
-          const cvs = document.createElement('canvas')
-          cvs.width = img.width
-          cvs.height = img.height
-          const ctx = cvs.getContext('2d')!
-          ctx.drawImage(img, 0, 0)
-          canvases.push(cvs)
+          canvases.push(await captureElement(el))
         }
 
-        // Stitch together
+        const gap = 24 * PIXEL_RATIO
+        const padding = 40 * PIXEL_RATIO
         const maxWidth = Math.max(...canvases.map(c => c.width))
-        const totalHeight = canvases.reduce((sum, c) => sum + c.height, 0) + gap * 2 * (canvases.length - 1)
-        const padding = 32 * 2 // 2x pixel ratio
+        const totalHeight = canvases.reduce((sum, c) => sum + c.height, 0) + gap * (canvases.length - 1)
 
         const final = document.createElement('canvas')
         final.width = maxWidth + padding * 2
         final.height = totalHeight + padding * 2
 
         const ctx = final.getContext('2d')!
-
-        // Background
-        const bgColor = getComputedStyle(document.documentElement)
-          .getPropertyValue('--background')
-          .trim() || '#0a0a0a'
-        ctx.fillStyle = bgColor
+        ctx.fillStyle = getBgColor()
         ctx.fillRect(0, 0, final.width, final.height)
 
         let y = padding
-        for (let i = 0; i < canvases.length; i++) {
-          const cvs = canvases[i]
+        for (const cvs of canvases) {
           const x = padding + (maxWidth - cvs.width) / 2
           ctx.drawImage(cvs, x, y)
-          y += cvs.height + gap * 2
+          y += cvs.height + gap
         }
 
-        // Add watermark
-        ctx.fillStyle = 'rgba(148,163,184,0.3)'
-        ctx.font = `${12 * 2}px "JetBrains Mono", "SF Mono", monospace`
+        // Watermark
+        const fontSize = 11 * PIXEL_RATIO
+        ctx.fillStyle = 'rgba(148,163,184,0.25)'
+        ctx.font = `500 ${fontSize}px "Inter", "SF Pro Display", system-ui, sans-serif`
         ctx.textAlign = 'right'
-        ctx.fillText('christianplanes.com', final.width - padding, final.height - padding / 2)
+        ctx.fillText('christianplanes.com', final.width - padding, final.height - padding * 0.4)
 
-        const dataUrl = final.toDataURL('image/png')
-        downloadImage(dataUrl)
+        downloadImage(final.toDataURL('image/png'))
       }
     } catch (err) {
       console.error('Export failed:', err)
@@ -148,58 +151,33 @@ export function ExportButton({ canvasRef, statsRef }: ExportButtonProps) {
           </div>
 
           <div className="p-2 space-y-1">
-            {/* Canvas — always included, shown as locked */}
-            <label className="flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm text-foreground/80 cursor-default">
-              <div className="w-4 h-4 rounded border border-cyan-500/50 bg-cyan-500/20 flex items-center justify-center">
-                <Check className="w-3 h-3 text-cyan-500" />
-              </div>
-              Aircraft canvas
-            </label>
+            {/* Canvas toggle */}
+            <CheckboxRow
+              label="Aircraft canvas"
+              checked={includeCanvas}
+              onChange={() => setIncludeCanvas(!includeCanvas)}
+            />
 
             {/* Controls toggle */}
-            <label className="flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm hover:bg-muted/50 transition-colors cursor-pointer">
-              <button
-                type="button"
-                role="checkbox"
-                aria-checked={includeControls}
-                onClick={() => setIncludeControls(!includeControls)}
-                className={cn(
-                  'w-4 h-4 rounded border flex items-center justify-center transition-colors',
-                  includeControls
-                    ? 'border-cyan-500/50 bg-cyan-500/20'
-                    : 'border-border bg-transparent'
-                )}
-              >
-                {includeControls && <Check className="w-3 h-3 text-cyan-500" />}
-              </button>
-              View controls
-            </label>
+            <CheckboxRow
+              label="View controls"
+              checked={includeControls}
+              onChange={() => setIncludeControls(!includeControls)}
+            />
 
             {/* Stats toggle */}
-            <label className="flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm hover:bg-muted/50 transition-colors cursor-pointer">
-              <button
-                type="button"
-                role="checkbox"
-                aria-checked={includeStats}
-                onClick={() => setIncludeStats(!includeStats)}
-                className={cn(
-                  'w-4 h-4 rounded border flex items-center justify-center transition-colors',
-                  includeStats
-                    ? 'border-cyan-500/50 bg-cyan-500/20'
-                    : 'border-border bg-transparent'
-                )}
-              >
-                {includeStats && <Check className="w-3 h-3 text-cyan-500" />}
-              </button>
-              Stats panel
-            </label>
+            <CheckboxRow
+              label="Stats panel"
+              checked={includeStats}
+              onChange={() => setIncludeStats(!includeStats)}
+            />
           </div>
 
           <div className="p-2 border-t border-border/60">
             <button
               onClick={handleExport}
-              disabled={exporting}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium bg-cyan-600 hover:bg-cyan-500 text-white transition-colors disabled:opacity-50"
+              disabled={exporting || nothingSelected}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium bg-cyan-600 hover:bg-cyan-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {exporting ? (
                 <>
@@ -217,6 +195,28 @@ export function ExportButton({ canvasRef, statsRef }: ExportButtonProps) {
         </div>
       )}
     </div>
+  )
+}
+
+function CheckboxRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) {
+  return (
+    <label className="flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm hover:bg-muted/50 transition-colors cursor-pointer">
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={checked}
+        onClick={onChange}
+        className={cn(
+          'w-4 h-4 rounded border flex items-center justify-center transition-colors',
+          checked
+            ? 'border-cyan-500/50 bg-cyan-500/20'
+            : 'border-border bg-transparent'
+        )}
+      >
+        {checked && <Check className="w-3 h-3 text-cyan-500" />}
+      </button>
+      {label}
+    </label>
   )
 }
 

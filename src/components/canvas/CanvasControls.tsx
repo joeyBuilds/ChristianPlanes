@@ -32,6 +32,8 @@ export function CanvasControls({ canvasRef, statsRef }: CanvasControlsProps) {
     setRenderStyle,
     ghostAircraftSlug,
     setGhostAircraft,
+    stackAlignment,
+    cycleStackAlignment,
   } = useComparisonStore()
 
   const pill = 'px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-medium rounded-full transition-all flex items-center gap-1 sm:gap-1.5 border cursor-pointer whitespace-nowrap'
@@ -77,12 +79,24 @@ export function CanvasControls({ canvasRef, statsRef }: CanvasControlsProps) {
       {/* Layout mode */}
       <div className="flex gap-1">
         <button
-          onClick={() => setViewMode('stacked')}
+          onClick={() => {
+            if (viewMode === 'stacked') {
+              cycleStackAlignment()
+            } else {
+              setViewMode('stacked')
+            }
+          }}
           className={cn(pill, viewMode === 'stacked' ? layoutActive : layoutInactive)}
+          title={viewMode === 'stacked' ? `Align: ${stackAlignment} (click to cycle)` : 'Stacked view'}
         >
-          <AlignVerticalJustifyStart className={ico} />
+          <AlignVerticalJustifyStart className={cn(ico, 'transition-transform', viewMode === 'stacked' && stackAlignment === 'center' ? 'scale-x-100' : viewMode === 'stacked' && stackAlignment === 'right' ? 'scale-x-[-1]' : '')} />
           <span className="hidden sm:inline">Stacked</span>
           <span className="sm:hidden">Stack</span>
+          {viewMode === 'stacked' && (
+            <span className="text-[9px] opacity-60 uppercase tracking-wider font-mono">
+              {stackAlignment === 'left' ? 'L' : stackAlignment === 'center' ? 'C' : 'R'}
+            </span>
+          )}
         </button>
         <button
           onClick={() => setViewMode('side-by-side')}
