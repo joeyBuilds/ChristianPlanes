@@ -28,3 +28,4 @@ planephotos/
 
 # Claude settings
 .claude/
+.vercel
