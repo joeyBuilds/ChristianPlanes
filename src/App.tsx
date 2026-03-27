@@ -5,8 +5,10 @@ import { Header } from '@/components/layout/Header'
 import { ComparisonCanvas } from '@/components/canvas/ComparisonCanvas'
 import { CanvasControls } from '@/components/canvas/CanvasControls'
 import { StatsPanel } from '@/components/comparison/StatsPanel'
+import { GhostStatsPanel } from '@/components/comparison/GhostStatsPanel'
 import { FunFacts } from '@/components/comparison/FunFacts'
 import { useAircraftData } from '@/hooks/useAircraftData'
+import { useGhostAircraft } from '@/hooks/useGhostAircraft'
 import { Loader2 } from 'lucide-react'
 
 function ComparisonPage() {
@@ -15,6 +17,7 @@ function ComparisonPage() {
   const {
     aircraft1Slug,
     aircraft2Slug,
+    ghostAircraftSlug,
     setAircraft1,
     setAircraft2,
   } = useComparisonStore()
@@ -40,6 +43,7 @@ function ComparisonPage() {
   const statsRef = useRef<HTMLDivElement>(null)
 
   const { data, isLoading, error } = useAircraftData(aircraft1Slug, aircraft2Slug)
+  const { data: ghostData } = useGhostAircraft(ghostAircraftSlug)
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -67,15 +71,22 @@ function ComparisonPage() {
               />
             </div>
             <CanvasControls canvasRef={canvasRef} statsRef={statsRef} />
-            <div ref={statsRef}>
-              <StatsPanel
-                aircraft1={data.aircraft1}
-                aircraft2={data.aircraft2}
-                aircraft1Slug={aircraft1Slug}
-                aircraft2Slug={aircraft2Slug}
-                onSelectAircraft1={setAircraft1}
-                onSelectAircraft2={setAircraft2}
-              />
+            <div ref={statsRef} className={ghostData ? 'flex flex-col md:flex-row gap-2 sm:gap-4' : ''}>
+              <div className={ghostData ? 'flex-1 min-w-0' : ''}>
+                <StatsPanel
+                  aircraft1={data.aircraft1}
+                  aircraft2={data.aircraft2}
+                  aircraft1Slug={aircraft1Slug}
+                  aircraft2Slug={aircraft2Slug}
+                  onSelectAircraft1={setAircraft1}
+                  onSelectAircraft2={setAircraft2}
+                />
+              </div>
+              {ghostData && (
+                <div className="flex-1 min-w-0">
+                  <GhostStatsPanel ghostSpec={ghostData} />
+                </div>
+              )}
             </div>
             <FunFacts
               aircraft1={data.aircraft1}

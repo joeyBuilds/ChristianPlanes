@@ -4,8 +4,6 @@ import {
   Eye,
   EyeOff,
   Ruler,
-  PenTool,
-  Image,
 } from 'lucide-react'
 import { useComparisonStore } from '@/stores/comparison-store'
 import { AircraftSelector } from '@/components/aircraft-selector/AircraftSelector'
@@ -31,8 +29,6 @@ export function ControlStrip({
     setViewAngle,
     showReferences,
     toggleReferences,
-    renderStyle,
-    setRenderStyle,
     unitSystem,
     setUnitSystem,
   } = useComparisonStore()
@@ -64,15 +60,6 @@ export function ControlStrip({
 
       <div className={sep} />
 
-      {/* Mode toggles */}
-      <button
-        onClick={() => setRenderStyle(renderStyle === 'blueprint' ? 'photo' : 'blueprint')}
-        className={cn(btn, renderStyle === 'blueprint' ? btnActive : btnDim)}
-        title={renderStyle === 'blueprint' ? 'Photo mode' : 'Blueprint mode'}
-      >
-        {renderStyle === 'blueprint' ? <PenTool className={ico} /> : <Image className={ico} />}
-      </button>
-
       <button
         onClick={() => setViewMode(viewMode === 'side-by-side' ? 'overlay' : 'side-by-side')}
         className={cn(btn, viewMode === 'overlay' ? btnActive : btnDim)}
@@ -82,9 +69,9 @@ export function ControlStrip({
       </button>
 
       <button
-        onClick={() => setViewAngle(viewAngle === 'side' ? 'top' : 'side')}
-        className={cn(btn, viewAngle === 'top' ? btnActive : btnDim)}
-        title={viewAngle === 'side' ? 'Top view' : 'Side view'}
+        onClick={() => setViewAngle(viewAngle === 'side' ? 'front' : viewAngle === 'front' ? 'top' : 'side')}
+        className={cn(btn, viewAngle !== 'side' ? btnActive : btnDim)}
+        title={viewAngle === 'side' ? 'Front view' : viewAngle === 'front' ? 'Top view' : 'Side view'}
       >
         {viewAngle === 'side' ? <Eye className={ico} /> : <EyeOff className={ico} />}
       </button>

@@ -5,8 +5,8 @@ interface ReferenceObjectsProps {
   groundY: number
   x: number
   canvasWidth: number
-  isPhoto: boolean
-  viewAngle: 'side' | 'top'
+  isDark: boolean
+  viewAngle: 'side' | 'top' | 'front'
 }
 
 interface RefObject {
@@ -37,7 +37,7 @@ const TOP_REFERENCES: RefObject[] = [
 
 const FONT = "'JetBrains Mono', 'SF Mono', 'Fira Code', monospace"
 
-export function ReferenceObjects({ pixelsPerMeter, groundY, x, canvasWidth, isPhoto, viewAngle }: ReferenceObjectsProps) {
+export function ReferenceObjects({ pixelsPerMeter, groundY, x, canvasWidth, isDark, viewAngle }: ReferenceObjectsProps) {
   const refs = viewAngle === 'top' ? TOP_REFERENCES : SIDE_REFERENCES
 
   // Select which references fit the current scale — show objects within a reasonable pixel range
@@ -51,7 +51,7 @@ export function ReferenceObjects({ pixelsPerMeter, groundY, x, canvasWidth, isPh
 
   if (visibleRefs.length === 0) return null
 
-  const labelOpacity = isPhoto ? 0.7 : 0.8
+  const labelOpacity = isDark ? 0.8 : 0.7
 
   return (
     <g>
@@ -64,7 +64,7 @@ export function ReferenceObjects({ pixelsPerMeter, groundY, x, canvasWidth, isPh
               groundY={groundY}
               x={x + i * 12} // slight stagger so ground-level objects don't fully overlap
               labelOpacity={labelOpacity}
-              isPhoto={isPhoto}
+              isDark={isDark}
             />
           ))
         : visibleRefs.map((ref, i) => (
@@ -75,7 +75,7 @@ export function ReferenceObjects({ pixelsPerMeter, groundY, x, canvasWidth, isPh
               groundY={groundY}
               x={x + i * 12}
               labelOpacity={labelOpacity}
-              isPhoto={isPhoto}
+              isDark={isDark}
             />
           ))
       }
@@ -83,8 +83,8 @@ export function ReferenceObjects({ pixelsPerMeter, groundY, x, canvasWidth, isPh
   )
 }
 
-function SideRefObject({ ref_, pixelsPerMeter, groundY, x, labelOpacity, isPhoto }: {
-  ref_: RefObject; pixelsPerMeter: number; groundY: number; x: number; labelOpacity: number; isPhoto: boolean
+function SideRefObject({ ref_, pixelsPerMeter, groundY, x, labelOpacity, isDark }: {
+  ref_: RefObject; pixelsPerMeter: number; groundY: number; x: number; labelOpacity: number; isDark: boolean
 }) {
   const pxLen = ref_.lengthM * pixelsPerMeter
   const pxH = (ref_.heightM || 0) * pixelsPerMeter
@@ -110,7 +110,7 @@ function SideRefObject({ ref_, pixelsPerMeter, groundY, x, labelOpacity, isPhoto
             width={ref_.label.length * 6.4 + 16}
             height={14}
             rx={3}
-            fill={isPhoto ? 'rgba(255,255,255,0.85)' : 'rgba(10,25,41,0.85)'}
+            fill={isDark ? 'rgba(10,25,41,0.85)' : 'rgba(255,255,255,0.85)'}
             stroke={ref_.color}
             strokeWidth={0.4}
             strokeOpacity={0.5}
@@ -170,7 +170,7 @@ function SideRefObject({ ref_, pixelsPerMeter, groundY, x, labelOpacity, isPhoto
           width={ref_.label.length * 6 + 12}
           height={13}
           rx={3}
-          fill={isPhoto ? 'rgba(255,255,255,0.85)' : 'rgba(10,25,41,0.85)'}
+          fill={isDark ? 'rgba(10,25,41,0.85)' : 'rgba(255,255,255,0.85)'}
           stroke={ref_.color}
           strokeWidth={0.4}
           strokeOpacity={0.4}
@@ -190,8 +190,8 @@ function SideRefObject({ ref_, pixelsPerMeter, groundY, x, labelOpacity, isPhoto
   )
 }
 
-function TopRefObject({ ref_, pixelsPerMeter, groundY, x, labelOpacity, isPhoto }: {
-  ref_: RefObject; pixelsPerMeter: number; groundY: number; x: number; labelOpacity: number; isPhoto: boolean
+function TopRefObject({ ref_, pixelsPerMeter, groundY, x, labelOpacity, isDark }: {
+  ref_: RefObject; pixelsPerMeter: number; groundY: number; x: number; labelOpacity: number; isDark: boolean
 }) {
   const pxLen = ref_.lengthM * pixelsPerMeter
   const pxW = (ref_.widthM || 0) * pixelsPerMeter
@@ -235,7 +235,7 @@ function TopRefObject({ ref_, pixelsPerMeter, groundY, x, labelOpacity, isPhoto 
           width={ref_.label.length * 6 + 12}
           height={13}
           rx={3}
-          fill={isPhoto ? 'rgba(255,255,255,0.85)' : 'rgba(10,25,41,0.85)'}
+          fill={isDark ? 'rgba(10,25,41,0.85)' : 'rgba(255,255,255,0.85)'}
           stroke={ref_.color}
           strokeWidth={0.4}
           strokeOpacity={0.3}

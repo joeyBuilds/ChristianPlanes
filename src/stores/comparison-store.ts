@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import type { ViewMode, ViewAngle, OverlayAlignment, StackAlignment, UnitSystem, RenderStyle } from '@/types/canvas'
+import { persist } from 'zustand/middleware'
+import type { ViewMode, ViewAngle, OverlayAlignment, StackAlignment, UnitSystem } from '@/types/canvas'
 
 const STACK_CYCLE: StackAlignment[] = ['left', 'center', 'right']
 
@@ -12,7 +13,8 @@ interface ComparisonState {
   stackAlignment: StackAlignment
   unitSystem: UnitSystem
   showReferences: boolean
-  renderStyle: RenderStyle
+  showMeasurements: boolean
+  showGrid: boolean
   ghostAircraftSlug: string | null
 
   setAircraft1: (slug: string | null) => void
@@ -23,33 +25,54 @@ interface ComparisonState {
   setOverlayAlignment: (alignment: OverlayAlignment) => void
   setUnitSystem: (system: UnitSystem) => void
   toggleReferences: () => void
-  setRenderStyle: (style: RenderStyle) => void
+  toggleMeasurements: () => void
+  toggleGrid: () => void
   setGhostAircraft: (slug: string | null) => void
 }
 
-export const useComparisonStore = create<ComparisonState>((set) => ({
-  aircraft1Slug: 'A220-100',
-  aircraft2Slug: 'A320-200',
-  viewMode: 'stacked',
-  viewAngle: 'side',
-  overlayAlignment: 'nose',
-  stackAlignment: 'left',
-  unitSystem: 'metric',
-  showReferences: false,
-  renderStyle: 'photo',
-  ghostAircraftSlug: null,
+export const useComparisonStore = create<ComparisonState>()(
+  persist(
+    (set) => ({
+      aircraft1Slug: 'A220-100',
+      aircraft2Slug: 'A320-200',
+      viewMode: 'stacked',
+      viewAngle: 'side',
+      overlayAlignment: 'nose',
+      stackAlignment: 'left',
+      unitSystem: 'metric',
+      showReferences: false,
+      showMeasurements: true,
+      showGrid: true,
+      ghostAircraftSlug: null,
 
-  setAircraft1: (slug) => set({ aircraft1Slug: slug }),
-  setAircraft2: (slug) => set({ aircraft2Slug: slug }),
-  setViewMode: (mode) => set({ viewMode: mode }),
-  cycleStackAlignment: () => set((s) => {
-    const idx = STACK_CYCLE.indexOf(s.stackAlignment)
-    return { stackAlignment: STACK_CYCLE[(idx + 1) % STACK_CYCLE.length] }
-  }),
-  setViewAngle: (angle) => set({ viewAngle: angle }),
-  setOverlayAlignment: (alignment) => set({ overlayAlignment: alignment }),
-  setUnitSystem: (system) => set({ unitSystem: system }),
-  toggleReferences: () => set((s) => ({ showReferences: !s.showReferences })),
-  setRenderStyle: (style) => set({ renderStyle: style }),
-  setGhostAircraft: (slug) => set({ ghostAircraftSlug: slug }),
-}))
+      setAircraft1: (slug) => set({ aircraft1Slug: slug }),
+      setAircraft2: (slug) => set({ aircraft2Slug: slug }),
+      setViewMode: (mode) => set({ viewMode: mode }),
+      cycleStackAlignment: () => set((s) => {
+        const idx = STACK_CYCLE.indexOf(s.stackAlignment)
+        return { stackAlignment: STACK_CYCLE[(idx + 1) % STACK_CYCLE.length] }
+      }),
+      setViewAngle: (angle) => set({ viewAngle: angle }),
+      setOverlayAlignment: (alignment) => set({ overlayAlignment: alignment }),
+      setUnitSystem: (system) => set({ unitSystem: system }),
+      toggleReferences: () => set((s) => ({ showReferences: !s.showReferences })),
+      toggleMeasurements: () => set((s) => ({ showMeasurements: !s.showMeasurements })),
+      toggleGrid: () => set((s) => ({ showGrid: !s.showGrid })),
+      setGhostAircraft: (slug) => set({ ghostAircraftSlug: slug }),
+    }),
+    {
+      name: 'aircraft-compare-state',
+      partialize: (state) => ({
+        aircraft1Slug: state.aircraft1Slug,
+        aircraft2Slug: state.aircraft2Slug,
+        viewMode: state.viewMode,
+        viewAngle: state.viewAngle,
+        stackAlignment: state.stackAlignment,
+        unitSystem: state.unitSystem,
+        showMeasurements: state.showMeasurements,
+        showGrid: state.showGrid,
+        ghostAircraftSlug: state.ghostAircraftSlug,
+      }),
+    }
+  )
+)

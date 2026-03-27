@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import type { SilhouetteData } from '@/lib/silhouette-generator'
-import type { RenderStyle } from '@/types/canvas'
 
 interface AircraftSilhouetteProps {
   silhouette: SilhouetteData
@@ -11,8 +10,9 @@ interface AircraftSilhouetteProps {
   color: string
   opacity?: number
   label: string
-  renderStyle: RenderStyle
-  imageUrl: string | null
+  /** URL to a real CAD-exported SVG blueprint (from bigNuts collection) */
+  blueprintUrl?: string | null
+  isDarkMode?: boolean
   labelYOffset?: number
   showDimensions?: boolean
   heightDimSide?: 'left' | 'right'
@@ -31,8 +31,8 @@ export function AircraftSilhouette({
   color,
   opacity = 1,
   label,
-  renderStyle,
-  imageUrl,
+  blueprintUrl,
+  isDarkMode = true,
   labelYOffset = -12,
   showDimensions = false,
   heightDimSide = 'right',
@@ -52,7 +52,7 @@ export function AircraftSilhouette({
     onHover?.(val)
   }
 
-  const usePhoto = renderStyle === 'photo' && imageUrl && !imageError
+  const useRealBlueprint = blueprintUrl && !imageError
   const monoFont = "'JetBrains Mono', 'SF Mono', 'Fira Code', monospace"
 
   return (
@@ -68,70 +68,74 @@ export function AircraftSilhouette({
         onMouseLeave={() => handleHover(false)}
         style={{ cursor: 'pointer' }}
       >
-        {usePhoto ? (
+        {useRealBlueprint ? (
           <>
-            {/* Photo/illustration mode — extra padding on right/bottom only so tail isn't clipped */}
-            {(() => {
-              const padR = width * 0.08
-              const padB = height * 0.08
-              return (
-                <image
-                  href={imageUrl!}
-                  x={0}
-                  y={0}
-                  width={width + padR}
-                  height={height + padB}
-                  preserveAspectRatio="xMinYMin meet"
-                  opacity={opacity}
-                  onLoad={() => setImageLoaded(true)}
-                  onError={() => setImageError(true)}
-                  style={{
-                    filter: hovered ? 'brightness(1.05)' : undefined,
-                    transition: 'filter 0.2s',
-                  }}
-                />
-              )
-            })()}
-            {/* Subtle border around the image when hovered */}
-            {hovered && (
+            {/* Real CAD blueprint SVG mode — uses actual technical drawings */}
+            <image
+              href={blueprintUrl!}
+              x={0}
+              y={0}
+              width={width}
+              height={height}
+              preserveAspectRatio="none"
+              opacity={opacity}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageError(true)}
+              style={{
+                filter: `brightness(0) saturate(100%) invert(1) opacity(${opacity * 0.85})`,
+                transition: 'filter 0.2s',
+              }}
+            />
+            {/* Color overlay tint for the blueprint — only when measurements on */}
+            {showDimensions && (
               <rect
-                x={-1}
-                y={-1}
-                width={width + 2}
-                height={height + 2}
-                fill="none"
-                stroke={color}
-                strokeWidth={1.5}
-                strokeOpacity={0.4}
+                x={0}
+                y={0}
+                width={width}
+                height={height}
+                fill={color}
+                fillOpacity={hovered ? 0.12 : 0.06}
                 rx={2}
+                style={{ pointerEvents: 'none', mixBlendMode: 'overlay' }}
               />
             )}
-            {/* "No image" indicator while loading */}
-            {!imageLoaded && !imageError && (
+            {/* "CAD" badge to indicate real blueprint — only when measurements on */}
+            {showDimensions && <g opacity={0.6}>
+              <rect
+                x={width - 32}
+                y={height - 14}
+                width={28}
+                height={12}
+                rx={2}
+                fill={isDarkMode ? '#0a1929' : 'rgba(255,255,255,0.85)'}
+                fillOpacity={0.7}
+                stroke={color}
+                strokeWidth={0.3}
+                strokeOpacity={0.3}
+              />
               <text
-                x={width / 2}
-                y={height / 2}
+                x={width - 18}
+                y={height - 5.5}
                 textAnchor="middle"
-                dominantBaseline="middle"
                 fill={color}
-                fillOpacity={0.5}
-                fontSize={10}
+                fontSize={6.5}
+                fontWeight={600}
                 fontFamily={monoFont}
               >
-                Loading...
+                CAD
               </text>
-            )}
+            </g>}
           </>
         ) : (
           <>
-            {/* Blueprint/SVG mode */}
+            {/* Blueprint/SVG mode — procedural generation */}
             <svg
               viewBox={silhouette.viewBox}
               width={width}
               height={height}
               overflow="visible"
             >
-              {/* Fill layer — higher opacity when overlaid for that reference-image solid blend look */}
+              {/* Fill layer */}
               <path
                 d={silhouette.path}
                 fill={color}
@@ -162,69 +166,47 @@ export function AircraftSilhouette({
                 />
               )}
             </svg>
-
-            {/* Show "no photo" badge when in photo mode but no image available */}
-            {renderStyle === 'photo' && (
-              <g opacity={0.5}>
-                <rect
-                  x={width / 2 - 42}
-                  y={height / 2 - 10}
-                  width={84}
-                  height={20}
-                  rx={4}
-                  fill="#0a1929"
-                  fillOpacity={0.85}
-                  stroke={color}
-                  strokeWidth={0.5}
-                  strokeOpacity={0.4}
-                />
-                <text
-                  x={width / 2}
-                  y={height / 2 + 4}
-                  textAnchor="middle"
-                  fill={color}
-                  fontSize={9}
-                  fontFamily={monoFont}
-                >
-                  No photo
-                </text>
-              </g>
-            )}
           </>
         )}
 
         {/* Height dimension — vertical bar on the configured side */}
-        {(hovered || showDimensions) && (
+        {showDimensions && (
           <g opacity={0.8}>
-            {heightDimSide === 'right' ? (
-              <>
-                <line x1={width + 14} y1={0} x2={width + 14} y2={height} stroke={color} strokeWidth={0.8} />
-                <line x1={width + 8} y1={0} x2={width + 20} y2={0} stroke={color} strokeWidth={0.8} />
-                <line x1={width + 8} y1={height} x2={width + 20} y2={height} stroke={color} strokeWidth={0.8} />
-                {/* Height label — colored pill */}
-                <rect x={width + 22} y={height / 2 - 8} width={42} height={16} rx={3}
-                  fill={color} fillOpacity={0.12} stroke={color} strokeWidth={0.5} strokeOpacity={0.3} />
-                <text x={width + 43} y={height / 2 + 4} textAnchor="middle" fill={color}
-                  fontSize={8.5} fontWeight={600} fontFamily={monoFont} dominantBaseline="middle">
-                  {silhouette.heightM.toFixed(1)} m
-                </text>
-              </>
-            ) : (
-              <>
-                <line x1={-14} y1={0} x2={-14} y2={height} stroke={color} strokeWidth={0.8} />
-                <line x1={-20} y1={0} x2={-8} y2={0} stroke={color} strokeWidth={0.8} />
-                <line x1={-20} y1={height} x2={-8} y2={height} stroke={color} strokeWidth={0.8} />
-                {/* Height label — colored pill */}
-                <rect x={-66} y={height / 2 - 8} width={42} height={16} rx={3}
-                  fill={color} fillOpacity={0.12} stroke={color} strokeWidth={0.5} strokeOpacity={0.3} />
-                <text x={-45} y={height / 2 + 4} textAnchor="middle" fill={color}
-                  fontSize={8.5} fontWeight={600} fontFamily={monoFont} dominantBaseline="middle">
-                  {silhouette.heightM.toFixed(1)} m
-                </text>
-              </>
-            )}
+            {(() => {
+              const lineX = heightDimSide === 'right' ? width + 10 : -10
+              const tickX1 = heightDimSide === 'right' ? width + 5 : -15
+              const tickX2 = heightDimSide === 'right' ? width + 15 : -5
+              const midY = height / 2
+              return (
+                <>
+                  <line x1={lineX} y1={0} x2={lineX} y2={height} stroke={color} strokeWidth={0.8} />
+                  <line x1={tickX1} y1={0} x2={tickX2} y2={0} stroke={color} strokeWidth={0.8} />
+                  <line x1={tickX1} y1={height} x2={tickX2} y2={height} stroke={color} strokeWidth={0.8} />
+                  {/* Height label — rotated vertically along the line */}
+                  <text
+                    x={lineX}
+                    y={midY}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill={color}
+                    fontSize={8}
+                    fontWeight={600}
+                    fontFamily={monoFont}
+                    transform={`rotate(-90, ${lineX}, ${midY})`}
+                    paintOrder="stroke"
+                    stroke={isDarkMode ? '#0a1929' : '#f8fafc'}
+                    strokeWidth={3}
+                    strokeLinejoin="round"
+                  >
+                    {silhouette.heightM.toFixed(1)} m
+                  </text>
+                </>
+              )
+            })()}
           </g>
         )}
+
+        {/* Width dimension — removed floating pill, now handled by bottom bars in ComparisonCanvas */}
 
         {/* Length bar below the aircraft (reference-image style) */}
         {showLengthBar && (
@@ -248,22 +230,34 @@ export function AircraftSilhouette({
           </g>
         )}
 
-        {/* Name label — compact pill above aircraft */}
-        {!showLengthBar && (() => {
-          const dimSuffix = (hovered || showDimensions)
+        {/* Thin horizontal line at label row + name label pill */}
+        {!showLengthBar && showDimensions && (() => {
+          const dimSuffix = showDimensions
             ? ` · ${silhouette.widthM.toFixed(1)} × ${silhouette.heightM.toFixed(1)}m`
             : ''
           const fullLabel = label + dimSuffix
           const lblW = fullLabel.length * 6.2 + 14
+          const lineY = labelYOffset + 8
           return (
             <g>
+              {/* Thin horizontal line spanning the aircraft width at the label row */}
+              <line
+                x1={0}
+                y1={lineY}
+                x2={width}
+                y2={lineY}
+                stroke={color}
+                strokeWidth={0.6}
+                strokeOpacity={0.5}
+              />
+              {/* Name tag pill */}
               <rect
                 x={width / 2 - lblW / 2}
                 y={labelYOffset - 9}
                 width={lblW}
                 height={16}
                 rx={3}
-                fill={usePhoto ? 'rgba(255,255,255,0.85)' : '#0a1929'}
+                fill={isDarkMode ? '#0a1929' : 'rgba(255,255,255,0.85)'}
                 fillOpacity={0.9}
                 stroke={color}
                 strokeWidth={0.5}

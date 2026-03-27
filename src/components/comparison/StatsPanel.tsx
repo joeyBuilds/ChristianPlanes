@@ -56,8 +56,8 @@ export function StatsPanel({
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
-      {/* ── Header: aircraft selectors + tally ── */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center border-b border-border/60 bg-muted/20">
+      {/* ── Row 1: aircraft selectors ── */}
+      <div className="grid grid-cols-2 items-center border-b border-border/40 bg-muted/20 min-h-[40px]">
         <div className="flex items-center justify-center px-2">
           <InlineSelector
             selectedSlug={aircraft1Slug}
@@ -65,21 +65,6 @@ export function StatsPanel({
             accentColor="blue"
             align="left"
           />
-        </div>
-        <div className="flex items-center gap-2.5 px-4 py-3">
-          <span className={cn(
-            'text-lg font-bold tabular-nums font-mono',
-            tally.ac1 >= tally.ac2 ? 'text-blue-500' : 'text-muted-foreground/30'
-          )}>
-            {tally.ac1}
-          </span>
-          <span className="text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-[0.2em]">vs</span>
-          <span className={cn(
-            'text-lg font-bold tabular-nums font-mono',
-            tally.ac2 >= tally.ac1 ? 'text-red-500' : 'text-muted-foreground/30'
-          )}>
-            {tally.ac2}
-          </span>
         </div>
         <div className="flex items-center justify-center px-2">
           <InlineSelector
@@ -89,6 +74,23 @@ export function StatsPanel({
             align="right"
           />
         </div>
+      </div>
+
+      {/* ── Row 2: tally score ── */}
+      <div className="flex items-center justify-center gap-3 py-1.5 border-b border-border/40 bg-muted/10 min-h-[40px]">
+        <span className={cn(
+          'text-lg font-bold tabular-nums font-mono',
+          tally.ac1 >= tally.ac2 ? 'text-blue-500' : 'text-muted-foreground/30'
+        )}>
+          {tally.ac1}
+        </span>
+        <span className="text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-[0.2em]">vs</span>
+        <span className={cn(
+          'text-lg font-bold tabular-nums font-mono',
+          tally.ac2 >= tally.ac1 ? 'text-red-500' : 'text-muted-foreground/30'
+        )}>
+          {tally.ac2}
+        </span>
       </div>
 
       {/* ── Vertical stat rows ── */}
@@ -115,9 +117,9 @@ export function StatsPanel({
           const bar2Pct = maxVal > 0 ? (v2 / maxVal) * 100 : 0
 
           return (
-            <div key={stat.label} className="grid grid-cols-[1fr_auto_1fr] items-center gap-0 px-3 sm:px-5 py-2 sm:py-2.5 group hover:bg-muted/30 transition-colors">
+            <div key={stat.label} className="grid grid-cols-[1fr_auto_1fr] items-center gap-0 px-3 sm:px-5 py-1 sm:py-1.5 min-h-[38px] group hover:bg-muted/30 transition-colors">
               {/* Left: ac1 value + bar */}
-              <div className="flex flex-col items-end gap-1">
+              <div className="flex flex-col items-end gap-0.5">
                 <span className={cn(
                   'text-xs sm:text-sm font-mono tabular-nums font-medium tracking-tight',
                   w1 && !tie ? 'text-blue-500' : 'text-muted-foreground/70'
@@ -127,7 +129,7 @@ export function StatsPanel({
                 <div className="w-full flex justify-end">
                   <div
                     className={cn(
-                      'h-[3px] rounded-full transition-all duration-500',
+                      'h-[2px] rounded-full transition-all duration-500',
                       w1 && !tie ? 'bg-blue-500/50' : 'bg-muted-foreground/15'
                     )}
                     style={{ width: `${bar1Pct}%` }}
@@ -136,7 +138,7 @@ export function StatsPanel({
               </div>
 
               {/* Center: label + delta */}
-              <div className="flex flex-col items-center px-2 sm:px-4 min-w-[70px] sm:min-w-[100px]">
+              <div className="flex flex-col items-center px-1.5 sm:px-3 min-w-[60px] sm:min-w-[85px]">
                 <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest leading-none">
                   {stat.label}
                 </span>
@@ -151,7 +153,7 @@ export function StatsPanel({
               </div>
 
               {/* Right: ac2 value + bar */}
-              <div className="flex flex-col items-start gap-1">
+              <div className="flex flex-col items-start gap-0.5">
                 <span className={cn(
                   'text-xs sm:text-sm font-mono tabular-nums font-medium tracking-tight',
                   w2 && !tie ? 'text-red-500' : 'text-muted-foreground/70'
@@ -161,7 +163,7 @@ export function StatsPanel({
                 <div className="w-full flex justify-start">
                   <div
                     className={cn(
-                      'h-[3px] rounded-full transition-all duration-500',
+                      'h-[2px] rounded-full transition-all duration-500',
                       w2 && !tie ? 'bg-red-500/50' : 'bg-muted-foreground/15'
                     )}
                     style={{ width: `${bar2Pct}%` }}
@@ -200,16 +202,19 @@ export function StatsPanel({
             />
           )
         })()}
-        {/* Capacity */}
-        {(aircraft1.capacity || aircraft2.capacity) && (() => {
-          const c1 = parseInt(aircraft1.capacity?.replace(/[^0-9]/g, '') || '0')
-          const c2 = parseInt(aircraft2.capacity?.replace(/[^0-9]/g, '') || '0')
-          const validCompare = c1 > 0 && c2 > 0
+        {/* Capacity — only compare if same unit type */}
+        {(() => {
+          const cap1 = aircraft1.capacity || '—'
+          const cap2 = aircraft2.capacity || '—'
+          const c1 = parseInt(cap1.replace(/[^0-9]/g, '') || '0')
+          const c2 = parseInt(cap2.replace(/[^0-9]/g, '') || '0')
+          const sameUnit = cap1.includes('passenger') === cap2.includes('passenger')
+          const validCompare = sameUnit && c1 > 0 && c2 > 0
           return (
             <TextStatRow
               label="Capacity"
-              v1={aircraft1.capacity || '—'}
-              v2={aircraft2.capacity || '—'}
+              v1={cap1}
+              v2={cap2}
               w1={validCompare && c1 > c2}
               w2={validCompare && c2 > c1}
               delta={validCompare && c1 !== c2 ? `+${(Math.abs(c1 - c2) / Math.min(c1, c2) * 100).toFixed(0)}%` : undefined}
@@ -228,7 +233,7 @@ function TextStatRow({ label, v1, v2, w1, w2, delta, deltaBlue }: {
   delta?: string; deltaBlue?: boolean
 }) {
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-0 px-3 sm:px-5 py-2 sm:py-2.5 hover:bg-muted/30 transition-colors">
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-0 px-3 sm:px-5 py-1 sm:py-1.5 min-h-[38px] hover:bg-muted/30 transition-colors">
       <div className="flex justify-end">
         <span className={cn(
           'text-xs sm:text-sm font-mono tabular-nums font-medium tracking-tight',
@@ -237,7 +242,7 @@ function TextStatRow({ label, v1, v2, w1, w2, delta, deltaBlue }: {
           {v1}
         </span>
       </div>
-      <div className="flex flex-col items-center px-2 sm:px-4 min-w-[70px] sm:min-w-[100px]">
+      <div className="flex flex-col items-center px-1.5 sm:px-3 min-w-[60px] sm:min-w-[85px]">
         <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest leading-none">
           {label}
         </span>

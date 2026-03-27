@@ -1070,10 +1070,145 @@ export interface SilhouetteData {
   heightM: number
 }
 
+/**
+ * Generate a front-view silhouette path.
+ * Shows the aircraft head-on: circular fuselage cross-section, wings extending
+ * horizontally, engines hanging below the wings, vertical stabilizer on top,
+ * and landing gear below.
+ */
+function generateFrontViewPath(spec: AircraftSpec): string {
+  const profile = getAircraftProfile(spec.slug)
+  const wingspan = spec.wingspan.metric
+  const height = spec.height.metric
+  const fuseDiam = profile.fuselageDiameterM
+  const halfFuse = fuseDiam / 2
+  const engineDiam = profile.engineDiameterM
+  const halfEngine = engineDiam / 2
+
+  // Center of the fuselage in our coordinate system
+  // Width = wingspan, Height = height (tail tip to ground)
+  const cx = wingspan / 2
+  // Fuselage center vertical position — above landing gear, below tail
+  const gearH = height * profile.mainGearHeightFrac
+  const fuseY = height - gearH - halfFuse
+
+  const parts: string[] = []
+
+  // --- Fuselage cross-section (ellipse) ---
+  // Slightly taller than wide for most fuselages
+  const fuseRx = halfFuse
+  const fuseRy = halfFuse * 1.05
+  parts.push(
+    `M ${cx - fuseRx} ${fuseY}` +
+    ` A ${fuseRx} ${fuseRy} 0 1 1 ${cx + fuseRx} ${fuseY}` +
+    ` A ${fuseRx} ${fuseRy} 0 1 1 ${cx - fuseRx} ${fuseY} Z`
+  )
+
+  // --- Wings (horizontal bars extending from fuselage) ---
+  const wingThick = fuseDiam * profile.wingThicknessFrac
+  const wingY = fuseY + halfFuse * profile.wingMountHeight
+  const halfWingThick = wingThick / 2
+
+  // Left wing
+  parts.push(
+    `M ${cx - fuseRx} ${wingY - halfWingThick}` +
+    ` L 0 ${wingY - halfWingThick}` +
+    ` L 0 ${wingY + halfWingThick}` +
+    ` L ${cx - fuseRx} ${wingY + halfWingThick} Z`
+  )
+  // Right wing
+  parts.push(
+    `M ${cx + fuseRx} ${wingY - halfWingThick}` +
+    ` L ${wingspan} ${wingY - halfWingThick}` +
+    ` L ${wingspan} ${wingY + halfWingThick}` +
+    ` L ${cx + fuseRx} ${wingY + halfWingThick} Z`
+  )
+
+  // --- Engines (circles hanging below wings) ---
+  const enginePositions = profile.engineSpanPositions || [0.35]
+  const pylonLen = fuseDiam * (profile.enginePylonLengthFrac || 0.14)
+
+  for (const spanPos of enginePositions) {
+    // Left engine
+    const leftEngX = cx - fuseRx - (wingspan / 2 - fuseRx) * spanPos
+    const engY = wingY + halfWingThick + pylonLen + halfEngine
+    // Pylon
+    parts.push(
+      `M ${leftEngX - 0.08} ${wingY + halfWingThick}` +
+      ` L ${leftEngX + 0.08} ${wingY + halfWingThick}` +
+      ` L ${leftEngX + 0.08} ${engY - halfEngine}` +
+      ` L ${leftEngX - 0.08} ${engY - halfEngine} Z`
+    )
+    // Engine nacelle
+    parts.push(
+      `M ${leftEngX - halfEngine} ${engY}` +
+      ` A ${halfEngine} ${halfEngine} 0 1 1 ${leftEngX + halfEngine} ${engY}` +
+      ` A ${halfEngine} ${halfEngine} 0 1 1 ${leftEngX - halfEngine} ${engY} Z`
+    )
+
+    // Right engine (mirror)
+    const rightEngX = cx + fuseRx + (wingspan / 2 - fuseRx) * spanPos
+    parts.push(
+      `M ${rightEngX - 0.08} ${wingY + halfWingThick}` +
+      ` L ${rightEngX + 0.08} ${wingY + halfWingThick}` +
+      ` L ${rightEngX + 0.08} ${engY - halfEngine}` +
+      ` L ${rightEngX - 0.08} ${engY - halfEngine} Z`
+    )
+    parts.push(
+      `M ${rightEngX - halfEngine} ${engY}` +
+      ` A ${halfEngine} ${halfEngine} 0 1 1 ${rightEngX + halfEngine} ${engY}` +
+      ` A ${halfEngine} ${halfEngine} 0 1 1 ${rightEngX - halfEngine} ${engY} Z`
+    )
+  }
+
+  // --- Vertical stabilizer (triangle on top) ---
+  const vStabH = height * profile.vStabHeightFrac
+  const vStabTop = fuseY - fuseRy - vStabH
+  const vStabBaseW = fuseDiam * 0.15
+  parts.push(
+    `M ${cx - vStabBaseW} ${fuseY - fuseRy}` +
+    ` L ${cx} ${vStabTop}` +
+    ` L ${cx + vStabBaseW} ${fuseY - fuseRy} Z`
+  )
+
+  // --- Landing gear (simple vertical lines below fuselage) ---
+  const gearBottom = height
+  const mainGearSpread = fuseRx * 1.4
+  const gearStrokeW = 0.12
+  // Left gear
+  parts.push(
+    `M ${cx - mainGearSpread - gearStrokeW} ${fuseY + fuseRy}` +
+    ` L ${cx - mainGearSpread + gearStrokeW} ${fuseY + fuseRy}` +
+    ` L ${cx - mainGearSpread + gearStrokeW} ${gearBottom}` +
+    ` L ${cx - mainGearSpread - gearStrokeW} ${gearBottom} Z`
+  )
+  // Right gear
+  parts.push(
+    `M ${cx + mainGearSpread - gearStrokeW} ${fuseY + fuseRy}` +
+    ` L ${cx + mainGearSpread + gearStrokeW} ${fuseY + fuseRy}` +
+    ` L ${cx + mainGearSpread + gearStrokeW} ${gearBottom}` +
+    ` L ${cx + mainGearSpread - gearStrokeW} ${gearBottom} Z`
+  )
+  // Wheels (small circles)
+  const wheelR = fuseDiam * 0.08
+  parts.push(
+    `M ${cx - mainGearSpread - wheelR} ${gearBottom - wheelR}` +
+    ` A ${wheelR} ${wheelR} 0 1 1 ${cx - mainGearSpread + wheelR} ${gearBottom - wheelR}` +
+    ` A ${wheelR} ${wheelR} 0 1 1 ${cx - mainGearSpread - wheelR} ${gearBottom - wheelR} Z`
+  )
+  parts.push(
+    `M ${cx + mainGearSpread - wheelR} ${gearBottom - wheelR}` +
+    ` A ${wheelR} ${wheelR} 0 1 1 ${cx + mainGearSpread + wheelR} ${gearBottom - wheelR}` +
+    ` A ${wheelR} ${wheelR} 0 1 1 ${cx + mainGearSpread - wheelR} ${gearBottom - wheelR} Z`
+  )
+
+  return parts.join(' ')
+}
+
 export function generateSilhouette(
   spec: AircraftSpec,
   _category: AircraftCategory,
-  view: 'side' | 'top',
+  view: 'side' | 'top' | 'front',
 ): SilhouetteData {
   const padding = 1
 
@@ -1085,6 +1220,16 @@ export function generateSilhouette(
     return {
       path,
       detailPath: detailPath || undefined,
+      viewBox: `${-padding} ${-padding} ${w + padding * 2} ${h + padding * 2}`,
+      widthM: w,
+      heightM: h,
+    }
+  } else if (view === 'front') {
+    const path = generateFrontViewPath(spec)
+    const w = spec.wingspan.metric
+    const h = spec.height.metric
+    return {
+      path,
       viewBox: `${-padding} ${-padding} ${w + padding * 2} ${h + padding * 2}`,
       widthM: w,
       heightM: h,

@@ -127,23 +127,25 @@ function parseComparisonHtml(html: string, slug1: string, slug2: string) {
 
       ;(aircraft1 as Record<string, unknown>)[key] = val1
       ;(aircraft2 as Record<string, unknown>)[key] = val2
-    } else if (tds.length === 3 || (tds.length === 5 && !config)) {
-      // Single-value row or unrecognized dual row
-      const ac1Text = $(tds[0]).text().trim()
-      const ac2Text = $(tds[tds.length - 1]).text().trim()
-
+    } else {
+      // Text-based rows (engines, cruise, capacity) — grab first and last td text
+      const allTds = tds.toArray()
+      let ac1Text = '', ac2Text = ''
+      if (labelIndex > 0) {
+        ac1Text = $(allTds[0]).text().trim()
+      }
+      if (labelIndex < allTds.length - 1) {
+        ac2Text = $(allTds[allTds.length - 1]).text().trim()
+      }
       if (label === 'engines') {
         aircraft1.engines = parseInt(ac1Text) || 0
         aircraft2.engines = parseInt(ac2Text) || 0
       } else if (label === 'cruise speed') {
         aircraft1.cruiseSpeed = ac1Text
         aircraft2.cruiseSpeed = ac2Text
-      } else if (label === 'capacity') {
-        aircraft1.capacity = ac1Text
-        aircraft2.capacity = ac2Text
-      } else if (label === 'max. capacity') {
-        aircraft1.maxCapacity = ac1Text
-        aircraft2.maxCapacity = ac2Text
+      } else if (label.includes('capacity')) {
+        if (ac1Text && !aircraft1.capacity) aircraft1.capacity = ac1Text
+        if (ac2Text && !aircraft2.capacity) aircraft2.capacity = ac2Text
       }
     }
   })

@@ -1,42 +1,54 @@
 import type { AircraftSpec } from '@/types/aircraft'
-import type { ViewAngle, RenderStyle } from '@/types/canvas'
+import type { ViewAngle } from '@/types/canvas'
 import { useSilhouette } from '@/hooks/useSilhouette'
-import { getAircraftImageUrl } from '@/data/aircraft-images'
+import { getAircraftBlueprintUrl } from '@/data/aircraft-blueprints'
 import { AircraftSilhouette } from './AircraftSilhouette'
 
 interface GhostAircraftProps {
   spec: AircraftSpec
   viewAngle: ViewAngle
-  renderStyle: RenderStyle
   pixelsPerMeter: number
-  groundY: number
-  x: number  // left starting position
+  x: number
+  y: number
+  opacity?: number
+  isDarkMode?: boolean
+  labelYOffset?: number
+  showDimensions?: boolean
+  heightDimSide?: 'left' | 'right'
+  showLengthBar?: boolean
+  lengthBarIndex?: number
 }
 
 const GHOST_COLOR = '#a78bfa' // purple-400
 
-export function GhostAircraft({ spec, viewAngle, renderStyle, pixelsPerMeter, groundY, x }: GhostAircraftProps) {
+export function GhostAircraft({
+  spec, viewAngle, pixelsPerMeter, x, y,
+  opacity = 0.25, isDarkMode = true, labelYOffset = -50,
+  showDimensions = false, heightDimSide = 'right',
+  showLengthBar = false, lengthBarIndex = 0,
+}: GhostAircraftProps) {
   const silhouette = useSilhouette(spec, viewAngle)
+  const blueprintUrl = getAircraftBlueprintUrl(spec.slug, viewAngle)
 
   if (!silhouette) return null
 
-  const y = groundY - silhouette.heightM * pixelsPerMeter
-  const effectiveStyle = renderStyle === 'photo' && viewAngle === 'top' ? 'blueprint' as const : renderStyle
-  const imageUrl = viewAngle === 'side' ? getAircraftImageUrl(spec.slug) : null
-
   return (
     <AircraftSilhouette
-      key={`ghost-${spec.slug}-${viewAngle}-${renderStyle}`}
+      key={`ghost-${spec.slug}-${viewAngle}`}
       silhouette={silhouette}
       x={x}
       y={y}
       pixelsPerMeter={pixelsPerMeter}
       color={GHOST_COLOR}
-      opacity={0.25}
+      opacity={opacity}
       label={`${spec.name} (ref)`}
-      renderStyle={effectiveStyle}
-      imageUrl={imageUrl}
-      labelYOffset={-50}
+      blueprintUrl={blueprintUrl}
+      isDarkMode={isDarkMode}
+      labelYOffset={labelYOffset}
+      showDimensions={showDimensions}
+      heightDimSide={heightDimSide}
+      showLengthBar={showLengthBar}
+      lengthBarIndex={lengthBarIndex}
     />
   )
 }

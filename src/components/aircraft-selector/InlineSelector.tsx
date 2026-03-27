@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { Search, ChevronDown, X, Camera } from 'lucide-react'
+import { Search, ChevronDown, X } from 'lucide-react'
 import { aircraftCatalog } from '@/data/aircraft-catalog'
-import { hasAircraftImage } from '@/data/aircraft-images'
 import { cn } from '@/lib/utils'
 
 interface InlineSelectorProps {
@@ -110,9 +109,6 @@ export function InlineSelector({ selectedSlug, onSelect, accentColor, align = 'l
                   >
                     <span className="flex items-center gap-1.5">
                       {entry.displayName}
-                      {hasAircraftImage(entry.slug) && (
-                        <Camera className="w-3 h-3 text-amber-500 shrink-0" />
-                      )}
                     </span>
                     <span className="text-xs text-muted-foreground capitalize">{entry.category}</span>
                   </button>
