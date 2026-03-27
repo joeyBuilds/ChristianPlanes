@@ -41,7 +41,7 @@ export function AircraftSilhouette({
   onHover,
 }: AircraftSilhouetteProps) {
   const [hovered, setHovered] = useState(false)
-  const [imageLoaded, setImageLoaded] = useState(false)
+  const [, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
 
   const width = silhouette.widthM * pixelsPerMeter
