@@ -8,6 +8,7 @@ import { CanvasControls } from '@/components/canvas/CanvasControls'
 import { StatsPanel } from '@/components/comparison/StatsPanel'
 import { GhostStatsPanel } from '@/components/comparison/GhostStatsPanel'
 import { FunFacts } from '@/components/comparison/FunFacts'
+import { SpotterCards } from '@/components/comparison/SpotterCards'
 import { RangeMapSection } from '@/components/range-map/RangeMapSection'
 import { useAircraftData } from '@/hooks/useAircraftData'
 import { useGhostAircraft } from '@/hooks/useGhostAircraft'
@@ -90,6 +91,12 @@ function ComparisonPage() {
                 </div>
               )}
             </div>
+            <SpotterCards
+              aircraft1Slug={aircraft1Slug}
+              aircraft2Slug={aircraft2Slug}
+              aircraft1Name={data.aircraft1.name}
+              aircraft2Name={data.aircraft2.name}
+            />
             <RangeMapSection
               aircraft1={data.aircraft1}
               aircraft2={data.aircraft2}
