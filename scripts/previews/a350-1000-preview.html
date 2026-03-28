@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Preview: A350-1000</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a1929;color:#e2e8f0;font-family:system-ui;padding:2rem}
+h1{color:#60a5fa;margin-bottom:.25rem;font-size:1.4rem}
+.src{font-size:.75rem;color:#64748b;margin-bottom:2rem;font-family:monospace}
+.card{background:#0d1f35;border:1px solid #1e3a5f;border-radius:12px;padding:1.25rem;margin-bottom:1.5rem}
+.card.miss{opacity:.3;border-style:dashed}
+.card h3{font-size:.7rem;font-weight:700;letter-spacing:.15em;color:#94a3b8;margin-bottom:.25rem}
+.card .sub{font-size:.65rem;color:#475569;margin-bottom:1rem}
+.box{background:#060f1d;border-radius:8px;padding:1rem;display:flex;align-items:center;justify-content:center}
+.box img{max-width:100%;max-height:500px;filter:brightness(0) invert(1)}
+.ph{color:#334155;font-style:italic;text-align:center;padding:4rem 0}
+.act{margin-top:2rem;padding:1.25rem;background:#0d2137;border-radius:12px;border:1px solid #1e3a5f}
+.act h3{font-size:.8rem;color:#60a5fa;margin-bottom:.75rem}
+.act code{display:block;background:#060f1d;padding:.75rem 1rem;border-radius:6px;font-family:monospace;font-size:.8rem;color:#a5f3fc;margin-top:.5rem}
+</style></head><body>
+<h1>A350-1000</h1>
+<div class="src">Source: bignuts_planeSVG/A350-1000.dxf</div>
+<div class="card"><h3>SIDE VIEW</h3>
+        <div class="sub">3139 entities · a350-1000-side.png</div>
+        <div class="box"><img src="a350-1000-side.png"></div></div><div class="card"><h3>TOP VIEW</h3>
+        <div class="sub">591 entities · a350-1000-top.png</div>
+        <div class="box"><img src="a350-1000-top.png"></div></div><div class="card"><h3>FRONT VIEW</h3>
+        <div class="sub">1031 entities · a350-1000-front.png</div>
+        <div class="box"><img src="a350-1000-front.png"></div></div>
+<div class="act">
+<h3>If this looks correct, run without --preview:</h3>
+<code>python3 scripts/ingest-aircraft.py A350-1000 "bignuts_planeSVG/A350-1000.dxf"</code>
+</div></body></html>

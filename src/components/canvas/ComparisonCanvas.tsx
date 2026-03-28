@@ -404,19 +404,20 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                   const dimLineGap = 18
                   let ac1LabelYOffset: number, ac2LabelYOffset: number
                   if (isStacked) {
-                    // All width dim lines sit above the topmost aircraft (ghost if present, else ac2).
-                    // Order top→bottom: purple (ghost), red (ac2), blue (ac1).
+                    // Width dim lines above topmost aircraft.
+                    // Shorter measurement on outside (top), longer closer to aircraft (nested brackets).
                     const hasGhost = !!(ghostSil && layout.ghost)
                     const topY = hasGhost ? layout.ghost!.y : layout.ac2.y
-                    // Blue (ac1) is closest to the aircraft, red (ac2) above it
-                    const ac1CanvasY = topY - labelPad
-                    const ac2CanvasY = topY - labelPad - dimLineGap
-                    ac1LabelYOffset = ac1CanvasY - layout.ac1.y
-                    ac2LabelYOffset = ac2CanvasY - layout.ac2.y
+                    const smallerIsAc1 = sil1.widthM <= sil2.widthM
+                    const insideCanvasY = topY - labelPad          // closer to aircraft = larger
+                    const outsideCanvasY = topY - labelPad - dimLineGap // further from aircraft = smaller
+                    ac1LabelYOffset = (smallerIsAc1 ? outsideCanvasY : insideCanvasY) - layout.ac1.y
+                    ac2LabelYOffset = (smallerIsAc1 ? insideCanvasY : outsideCanvasY) - layout.ac2.y
                   } else if (isOverlay) {
-                    // Overlay: stagger like stacked — red (ac2) above blue (ac1)
-                    ac1LabelYOffset = layout.labelRowY - layout.ac1.y - labelPad
-                    ac2LabelYOffset = layout.labelRowY - layout.ac2.y - labelPad - dimLineGap
+                    // Overlay: shorter on outside (top), longer closer to aircraft
+                    const smallerIsAc1 = sil1.widthM <= sil2.widthM
+                    ac1LabelYOffset = layout.labelRowY - layout.ac1.y - labelPad - (smallerIsAc1 ? dimLineGap : 0)
+                    ac2LabelYOffset = layout.labelRowY - layout.ac2.y - labelPad - (smallerIsAc1 ? 0 : dimLineGap)
                   } else {
                     ac1LabelYOffset = layout.labelRowY - layout.ac1.y - labelPad
                     ac2LabelYOffset = layout.labelRowY - layout.ac2.y - labelPad
@@ -427,13 +428,14 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                   const isSideBySide = viewMode === 'side-by-side'
                   let ac1HeightDimX: number | undefined
                   let ac2HeightDimX: number | undefined
-                  if (isStacked) {
+                  if (isStacked || isOverlay) {
                     const maxWidthPx = Math.max(sil1.widthM, sil2.widthM, ...(ghostSil ? [ghostSil.widthM] : [])) * layout.pixelsPerMeter
-                    // Target canvas X = leftmost aircraft X + widest aircraft width + margin
-                    const targetCanvasX = Math.min(layout.ac1.x, layout.ac2.x) + maxWidthPx + 10
-                    // Convert to local coords for each aircraft
-                    ac1HeightDimX = targetCanvasX - layout.ac1.x
-                    ac2HeightDimX = targetCanvasX - layout.ac2.x
+                    const innerX = Math.min(layout.ac1.x, layout.ac2.x) + maxWidthPx + 10
+                    const outerX = innerX + 18
+                    // Smaller height measurement on outside (further right), larger inside
+                    const smallerIsAc1 = sil1.heightM <= sil2.heightM
+                    ac1HeightDimX = (smallerIsAc1 ? outerX : innerX) - layout.ac1.x
+                    ac2HeightDimX = (smallerIsAc1 ? innerX : outerX) - layout.ac2.x
                   }
 
                   // In side-by-side, AC1 height dim is drawn on the ruler axis (in ComparisonCanvas after AxisRulers)
@@ -501,8 +503,16 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                     ]
                   : [
                       ...(ghostEntry ? [ghostEntry] : []),
-                      { name: aircraft2.name, color: AIRCRAFT2_COLOR, widthM: sil2.widthM, heightM: sil2.heightM, acX: layout.ac2.x },
-                      { name: aircraft1.name, color: AIRCRAFT1_COLOR, widthM: sil1.widthM, heightM: sil1.heightM, acX: layout.ac1.x },
+                      // Smaller aircraft bar on top (closer to aircraft), larger on bottom
+                      ...(sil1.widthM <= sil2.widthM
+                        ? [
+                            { name: aircraft1.name, color: AIRCRAFT1_COLOR, widthM: sil1.widthM, heightM: sil1.heightM, acX: layout.ac1.x },
+                            { name: aircraft2.name, color: AIRCRAFT2_COLOR, widthM: sil2.widthM, heightM: sil2.heightM, acX: layout.ac2.x },
+                          ]
+                        : [
+                            { name: aircraft2.name, color: AIRCRAFT2_COLOR, widthM: sil2.widthM, heightM: sil2.heightM, acX: layout.ac2.x },
+                            { name: aircraft1.name, color: AIRCRAFT1_COLOR, widthM: sil1.widthM, heightM: sil1.heightM, acX: layout.ac1.x },
+                          ]),
                     ]
 
                 return (
@@ -532,49 +542,7 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                 )
               })()}
 
-              {/* Combined height dimension for stacked view */}
-              {showMeasurements && viewMode === 'stacked' && (() => {
-                const ppm = layout.pixelsPerMeter
-                // Sum individually-rounded values so displayed total matches the parts
-                const combinedHeightM = [
-                  Math.round(sil1.heightM * 10) / 10,
-                  Math.round(sil2.heightM * 10) / 10,
-                  ...(ghostSpec && ghostSil ? [Math.round(ghostSil.heightM * 10) / 10] : []),
-                ].reduce((a, b) => a + b, 0)
-                const maxWidthPx = Math.max(sil1.widthM, sil2.widthM, ...(ghostSpec && ghostSil ? [ghostSil.widthM] : [])) * ppm
-                // Position 20px to the right of the individual aligned height dim lines
-                const lineX = Math.min(layout.ac1.x, layout.ac2.x) + maxWidthPx + 30
-                const topY = layout.groundY - combinedHeightM * ppm
-                const bottomY = layout.groundY
-                const tickX1 = lineX - 5
-                const tickX2 = lineX + 5
-                const midY = (topY + bottomY) / 2
-                const combinedColor = isDarkMode ? '#e2e8f0' : '#334155'
-                return (
-                  <g opacity={0.9}>
-                    <line x1={lineX} y1={topY} x2={lineX} y2={bottomY} stroke={combinedColor} strokeWidth={1} />
-                    <line x1={tickX1} y1={topY} x2={tickX2} y2={topY} stroke={combinedColor} strokeWidth={1} />
-                    <line x1={tickX1} y1={bottomY} x2={tickX2} y2={bottomY} stroke={combinedColor} strokeWidth={1} />
-                    <text
-                      x={lineX + 2}
-                      y={midY}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fill={combinedColor}
-                      fontSize={9}
-                      fontWeight={700}
-                      fontFamily={MONO_FONT}
-                      transform={`rotate(-90, ${lineX + 2}, ${midY})`}
-                      paintOrder="stroke"
-                      stroke={isDarkMode ? '#0a1929' : '#f8fafc'}
-                      strokeWidth={3}
-                      strokeLinejoin="round"
-                    >
-                      {combinedHeightM.toFixed(1)} m
-                    </text>
-                  </g>
-                )
-              })()}
+              {/* Combined height dimension removed per client request */}
 
               {/* Axis rulers (always visible, rendered on top) */}
               <AxisRulers
