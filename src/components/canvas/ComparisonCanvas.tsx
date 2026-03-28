@@ -128,140 +128,148 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
   const layout = useMemo(() => {
     if (!sil1 || !sil2) return null
 
-    const canvasWidth = 900
-    const padding = 80 + RULER_MARGIN / 2
-    const startX = RULER_MARGIN + 8
-    const topPad = 30
-    const bottomPad = 50
     const hasGhost = !!ghostSil
+    const isTopView = viewAngle === 'top'
 
-    // Strategy: use width to determine scale, compute height to fit content.
-    // Ground always at bottom. Clamp aspect ratio to reasonable range.
+    // ── Fixed canvas & padding ──────────────────────────────────────────
+    // Same values for ALL view modes so toggling never resizes the container.
+    const CANVAS_W = 900
+    const CANVAS_H = 500
+
+    // How many width-dimension lines stack above the aircraft (blue, red, +purple)
+    const dimLineCount = hasGhost ? 3 : 2
+    const DIM_LINE_GAP = 18
+    // Space above aircraft for dimension lines + breathing room below ruler
+    const TOP_PAD = RULER_MARGIN + 10 + dimLineCount * DIM_LINE_GAP + 12
+
+    // Bottom bars: up to 3 stacked bars (19px each) + ground label
+    const barCount = hasGhost ? 3 : 2
+    const BOTTOM_PAD = 6 + barCount * 19 + 8
+
+    // Right margin: room for height dim lines + labels
+    const RIGHT_PAD = 60
+
+    // Available drawing area (where aircraft actually go)
+    const drawLeft = RULER_MARGIN
+    const drawTop = TOP_PAD
+    const drawW = CANVAS_W - drawLeft - RIGHT_PAD
+    const drawH = CANVAS_H - drawTop - BOTTOM_PAD
+
+    // ── Per-mode content metrics (meters) ───────────────────────────────
+    let contentWidthM: number
+    let contentHeightM: number
 
     if (viewMode === 'stacked') {
-      const vertGapM = 3
-      const allHeights = [sil1.heightM, sil2.heightM, ...(hasGhost ? [ghostSil.heightM] : [])]
-      const gaps = hasGhost ? 2 : 1
-      const totalHeightM = allHeights.reduce((a, b) => a + b, 0) + gaps * vertGapM
-      const maxWidth = Math.max(sil1.widthM, sil2.widthM, ...(hasGhost ? [ghostSil.widthM] : []))
+      contentWidthM = Math.max(sil1.widthM, sil2.widthM, ...(hasGhost ? [ghostSil.widthM] : []))
+      contentHeightM = sil1.heightM + sil2.heightM + (hasGhost ? ghostSil.heightM : 0)
+    } else if (viewMode === 'side-by-side') {
+      contentWidthM = sil1.widthM + sil2.widthM + (hasGhost ? ghostSil.widthM : 0)
+      contentHeightM = Math.max(sil1.heightM, sil2.heightM, ...(hasGhost ? [ghostSil.heightM] : []))
+    } else {
+      contentWidthM = Math.max(sil1.widthM, sil2.widthM, ...(hasGhost ? [ghostSil.widthM] : []))
+      contentHeightM = Math.max(sil1.heightM, sil2.heightM, ...(hasGhost ? [ghostSil.heightM] : []))
+    }
 
-      const pixelsPerMeter = (canvasWidth - startX - padding) / maxWidth
-      const contentH = totalHeightM * pixelsPerMeter
-      const canvasHeight = Math.max(300, Math.min(600, topPad + contentH + bottomPad))
+    // PPM that fits content inside the drawing area
+    const ppm = Math.min(drawW / contentWidthM, drawH / contentHeightM)
 
-      // Recompute with final height to ensure content fits
-      const finalPPM = Math.min(pixelsPerMeter, (canvasHeight - topPad - bottomPad) / totalHeightM)
-      const vertGapPx = vertGapM * finalPPM
-      const maxWidthPx = maxWidth * finalPPM
+    // Ground line: bottom of drawing area
+    const groundY = drawTop + drawH
 
-      const groundY = canvasHeight - bottomPad
+    // ── Position aircraft ───────────────────────────────────────────────
+    let ac1X: number, ac1Y: number
+    let ac2X: number, ac2Y: number
+    let ghostPos: { x: number; y: number; opacity: number } | null = null
+    let ac1Opacity = 1, ac2Opacity = 1
 
-      // Bottom to top: ac1 (bottom), ac2, ghost (top)
-      const ac1Y = groundY - sil1.heightM * finalPPM
-      const ac2Y = ac1Y - vertGapPx - sil2.heightM * finalPPM
+    if (viewMode === 'stacked') {
+      const maxWidthPx = contentWidthM * ppm
 
-      const ac1WidthPx = sil1.widthM * finalPPM
-      const ac2WidthPx = sil2.widthM * finalPPM
-      let ac1X = startX, ac2X = startX
+      // Bottom to top: ac1, ac2, ghost
+      ac1Y = groundY - sil1.heightM * ppm
+      ac2Y = ac1Y - sil2.heightM * ppm
+
+      const ac1WidthPx = sil1.widthM * ppm
+      const ac2WidthPx = sil2.widthM * ppm
+      ac1X = drawLeft
+      ac2X = drawLeft
       if (stackAlignment === 'center') {
-        ac1X = startX + (maxWidthPx - ac1WidthPx) / 2
-        ac2X = startX + (maxWidthPx - ac2WidthPx) / 2
+        ac1X = drawLeft + (maxWidthPx - ac1WidthPx) / 2
+        ac2X = drawLeft + (maxWidthPx - ac2WidthPx) / 2
       } else if (stackAlignment === 'right') {
-        ac1X = startX + (maxWidthPx - ac1WidthPx)
-        ac2X = startX + (maxWidthPx - ac2WidthPx)
+        ac1X = drawLeft + (maxWidthPx - ac1WidthPx)
+        ac2X = drawLeft + (maxWidthPx - ac2WidthPx)
       }
 
-      let ghostPos = null
       if (hasGhost) {
-        const gWidthPx = ghostSil.widthM * finalPPM
-        let gX = startX
-        if (stackAlignment === 'center') gX = startX + (maxWidthPx - gWidthPx) / 2
-        else if (stackAlignment === 'right') gX = startX + (maxWidthPx - gWidthPx)
-        const gY = ac2Y - vertGapPx - ghostSil.heightM * finalPPM
+        const gWidthPx = ghostSil.widthM * ppm
+        let gX = drawLeft
+        if (stackAlignment === 'center') gX = drawLeft + (maxWidthPx - gWidthPx) / 2
+        else if (stackAlignment === 'right') gX = drawLeft + (maxWidthPx - gWidthPx)
+        const gY = ac2Y - ghostSil.heightM * ppm
         ghostPos = { x: gX, y: gY, opacity: 0.25 }
-      }
-
-      const labelRowY = Math.min(ac1Y, ac2Y, ...(ghostPos ? [ghostPos.y] : []))
-
-      return {
-        pixelsPerMeter: finalPPM, canvasWidth, canvasHeight, groundY, labelRowY,
-        ac1: { x: ac1X, y: ac1Y, opacity: 1 },
-        ac2: { x: ac2X, y: ac2Y, opacity: 1 },
-        ghost: ghostPos,
       }
     } else if (viewMode === 'side-by-side') {
-      const gapM = 10
-      const allWidths = sil1.widthM + sil2.widthM + (hasGhost ? ghostSil.widthM + gapM : 0) + gapM
-      const maxHeight = Math.max(sil1.heightM, sil2.heightM, ...(hasGhost ? [ghostSil.heightM] : []))
+      const SBS_GAP = 10 // px gap between aircraft
+      ac1X = drawLeft
+      ac1Y = groundY - sil1.heightM * ppm
+      ac2X = ac1X + sil1.widthM * ppm + SBS_GAP
+      ac2Y = groundY - sil2.heightM * ppm
 
-      const pixelsPerMeter = (canvasWidth - padding * 2) / allWidths
-      const contentH = maxHeight * pixelsPerMeter
-      const canvasHeight = Math.max(300, Math.min(600, topPad + contentH + bottomPad))
-      const finalPPM = Math.min(pixelsPerMeter, (canvasHeight - topPad - bottomPad) / maxHeight)
-
-      const groundY = canvasHeight - bottomPad
-      const gapPx = gapM * finalPPM
-
-      const ac1X = startX
-      const ac1Y = groundY - sil1.heightM * finalPPM
-      const ac2X = ac1X + sil1.widthM * finalPPM + gapPx
-      const ac2Y = groundY - sil2.heightM * finalPPM
-
-      let ghostPos = null
       if (hasGhost) {
-        const gX = ac2X + sil2.widthM * finalPPM + gapPx
-        const gY = groundY - ghostSil.heightM * finalPPM
+        const gX = ac2X + sil2.widthM * ppm + SBS_GAP
+        const gY = groundY - ghostSil.heightM * ppm
         ghostPos = { x: gX, y: gY, opacity: 0.25 }
-      }
-
-      const labelRowY = Math.min(ac1Y, ac2Y, ...(ghostPos ? [ghostPos.y] : []))
-
-      return {
-        pixelsPerMeter: finalPPM, canvasWidth, canvasHeight, groundY, labelRowY,
-        ac1: { x: ac1X, y: ac1Y, opacity: 1 },
-        ac2: { x: ac2X, y: ac2Y, opacity: 1 },
-        ghost: ghostPos,
       }
     } else {
-      // Overlay — center-aligned by fuselage midpoint, ground at bottom
-      const allWidths = [sil1.widthM, sil2.widthM, ...(hasGhost ? [ghostSil.widthM] : [])]
-      const allHeights = [sil1.heightM, sil2.heightM, ...(hasGhost ? [ghostSil.heightM] : [])]
-      const maxWidth = Math.max(...allWidths)
-      const maxHeight = Math.max(...allHeights)
+      // Overlay — center horizontally
+      ac1Opacity = 0.55
+      ac2Opacity = 0.55
+      const centerX = drawLeft + drawW / 2
+      ac1X = centerX - (sil1.widthM * ppm) / 2
+      ac2X = centerX - (sil2.widthM * ppm) / 2
 
-      const overlayBottom = bottomPad + 30 + (hasGhost ? 19 : 0)
-      const pixelsPerMeter = (canvasWidth - startX - padding) / maxWidth
-      const contentH = maxHeight * pixelsPerMeter
-      const canvasHeight = Math.max(300, Math.min(600, topPad + contentH + overlayBottom))
-      const finalPPM = Math.min(pixelsPerMeter, (canvasHeight - topPad - overlayBottom) / maxHeight)
+      if (isTopView) {
+        const vertCenter = drawTop + drawH / 2
+        ac1Y = vertCenter - (sil1.heightM * ppm) / 2
+        ac2Y = vertCenter - (sil2.heightM * ppm) / 2
+      } else {
+        ac1Y = groundY - sil1.heightM * ppm
+        ac2Y = groundY - sil2.heightM * ppm
+      }
 
-      const groundY = canvasHeight - overlayBottom
-
-      const availableWidth = canvasWidth - RULER_MARGIN - padding
-      const centerX = RULER_MARGIN + availableWidth / 2
-
-      const ac1X = centerX - (sil1.widthM * finalPPM) / 2
-      const ac1Y = groundY - sil1.heightM * finalPPM
-      const ac2X = centerX - (sil2.widthM * finalPPM) / 2
-      const ac2Y = groundY - sil2.heightM * finalPPM
-
-      let ghostPos = null
       if (hasGhost) {
-        const gX = centerX - (ghostSil.widthM * finalPPM) / 2
-        const gY = groundY - ghostSil.heightM * finalPPM
+        const gX = centerX - (ghostSil.widthM * ppm) / 2
+        const gY = isTopView
+          ? drawTop + drawH / 2 - (ghostSil.heightM * ppm) / 2
+          : groundY - ghostSil.heightM * ppm
         ghostPos = { x: gX, y: gY, opacity: 0.25 }
       }
-
-      const labelRowY = Math.min(ac1Y, ac2Y, ...(ghostPos ? [ghostPos.y] : []))
-
-      return {
-        pixelsPerMeter: finalPPM, canvasWidth, canvasHeight, groundY, labelRowY,
-        ac1: { x: ac1X, y: ac1Y, opacity: 0.55 },
-        ac2: { x: ac2X, y: ac2Y, opacity: 0.55 },
-        ghost: ghostPos,
-      }
     }
-  }, [sil1, sil2, ghostSil, viewMode, stackAlignment])
+
+    // labelRowY = top of the topmost aircraft (used to anchor width dim lines)
+    const labelRowY = Math.min(ac1Y, ac2Y, ...(ghostPos ? [ghostPos.y] : []))
+
+    // Fit canvas to actual content — no dead space.
+    const rightEdges = [
+      ac1X + sil1.widthM * ppm,
+      ac2X + sil2.widthM * ppm,
+      ...(ghostPos && ghostSil ? [ghostPos.x + ghostSil.widthM * ppm] : []),
+    ]
+    const fittedW = Math.ceil(Math.max(...rightEdges) + RIGHT_PAD)
+    const fittedH = Math.ceil(groundY + BOTTOM_PAD)
+
+    return {
+      pixelsPerMeter: ppm,
+      canvasWidth: fittedW,
+      canvasHeight: fittedH,
+      groundY,
+      labelRowY,
+      ac1: { x: ac1X, y: ac1Y, opacity: ac1Opacity },
+      ac2: { x: ac2X, y: ac2Y, opacity: ac2Opacity },
+      ghost: ghostPos,
+    }
+  }, [sil1, sil2, ghostSil, viewMode, viewAngle, stackAlignment, showMeasurements])
 
   const isOverlay = viewMode === 'overlay'
 
@@ -279,13 +287,13 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
 
   const groundColor = isDarkMode ? '#3b82f6' : '#94a3b8'
 
-  const zoomBtn = 'p-1.5 rounded-full transition-colors ' + (isDarkMode
+  const zoomBtn = 'p-2.5 sm:p-1.5 rounded-full transition-colors ' + (isDarkMode
     ? 'text-blue-400/40 hover:text-blue-300 hover:bg-white/5'
     : 'text-slate-400 hover:text-slate-600 hover:bg-black/5')
 
   return (
     <div className={`rounded-lg overflow-hidden ${isDarkMode ? 'border border-[#1e3a5f]' : 'border border-border'}`}>
-      <div className="relative" style={{ background: canvasBg }}>
+      <div className="relative w-full" style={{ background: canvasBg, aspectRatio: `${layout.canvasWidth} / ${layout.canvasHeight}`, maxHeight: '50vh' }}>
         {/* Floating zoom controls */}
         <div className="absolute top-2 right-2 z-10 flex flex-col gap-0.5">
           <button onClick={() => transformRef.current?.zoomIn()} className={zoomBtn} title="Zoom in">
@@ -301,13 +309,13 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
         <TransformWrapper
           ref={transformRef}
           initialScale={1}
-          minScale={0.3}
+          minScale={1}
           maxScale={8}
           centerOnInit
           wheel={{ step: 0.08 }}
         >
           <TransformComponent
-            wrapperStyle={{ width: '100%', height: 'auto', aspectRatio: `${layout.canvasWidth} / ${layout.canvasHeight}` }}
+            wrapperStyle={{ width: '100%', height: '100%' }}
             contentStyle={{ width: '100%', height: '100%' }}
           >
             <svg
@@ -327,53 +335,111 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                 />
               )}
 
-              {/* Ground line */}
-              <line
-                x1={RULER_MARGIN}
-                y1={layout.groundY}
-                x2={layout.canvasWidth}
-                y2={layout.groundY}
-                stroke={groundColor}
-                strokeWidth={1}
-                opacity={0.4}
-              />
-              <text
-                x={layout.canvasWidth - 10}
-                y={layout.groundY + 14}
-                textAnchor="end"
-                fill={groundColor}
-                fillOpacity={0.4}
-                fontSize={9}
-                fontFamily={MONO_FONT}
-              >
-                GND · 0m
-              </text>
-
-              {/* Ghost reference aircraft */}
-              {ghostSpec && layout.ghost && (
-                <GhostAircraft
-                  spec={ghostSpec}
-                  viewAngle={viewAngle}
-                  pixelsPerMeter={layout.pixelsPerMeter}
-                  x={layout.ghost.x}
-                  y={layout.ghost.y}
-                  opacity={layout.ghost.opacity}
-                  isDarkMode={isDarkMode}
-                  showDimensions={showMeasurements}
-                  showLengthBar={isOverlay}
-                  lengthBarIndex={2}
-                  labelYOffset={layout.labelRowY - layout.ghost.y - 22}
-                />
+              {/* Ground line (hidden in top view — no ground concept) */}
+              {viewAngle !== 'top' && (
+                <>
+                  <line
+                    x1={RULER_MARGIN}
+                    y1={layout.groundY}
+                    x2={layout.canvasWidth}
+                    y2={layout.groundY}
+                    stroke={groundColor}
+                    strokeWidth={1}
+                    opacity={0.4}
+                  />
+                  <text
+                    x={layout.canvasWidth - 10}
+                    y={layout.groundY + 14}
+                    textAnchor="end"
+                    fill={groundColor}
+                    fillOpacity={0.4}
+                    fontSize={9}
+                    fontFamily={MONO_FONT}
+                  >
+                    GND · 0m
+                  </text>
+                </>
               )}
 
+              {/* Ghost reference aircraft */}
+              {ghostSpec && ghostSil && layout.ghost && (() => {
+                const isStacked = viewMode === 'stacked'
+                let ghostHeightDimX: number | undefined
+                if (isStacked) {
+                  const maxWidthPx = Math.max(sil1.widthM, sil2.widthM, ghostSil.widthM) * layout.pixelsPerMeter
+                  const targetCanvasX = Math.min(layout.ac1.x, layout.ac2.x, layout.ghost.x) + maxWidthPx + 10
+                  ghostHeightDimX = targetCanvasX - layout.ghost.x
+                }
+                return (
+                  <GhostAircraft
+                    spec={ghostSpec}
+                    viewAngle={viewAngle}
+                    pixelsPerMeter={layout.pixelsPerMeter}
+                    x={layout.ghost.x}
+                    y={layout.ghost.y}
+                    opacity={layout.ghost.opacity}
+                    isDarkMode={isDarkMode}
+                    showDimensions={showMeasurements}
+                    showLengthBar={isOverlay}
+                    lengthBarIndex={2}
+                    labelYOffset={isStacked
+                      ? -(22 + 18 + 18) // above blue and red dim lines
+                      : layout.labelRowY - layout.ghost.y - 22
+                    }
+                    heightDimXOffset={ghostHeightDimX}
+                  />
+                )
+              })()}
+
               {/* Aircraft silhouettes */}
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="sync">
                 {(() => {
                   const ac1First = !isOverlay || sil1.widthM >= sil2.widthM
-                  // Compute label offsets so all name tags sit on the same row
+                  // Compute label offsets for width dimension lines
                   const labelPad = 22
-                  const ac1LabelYOffset = layout.labelRowY - layout.ac1.y - labelPad
-                  const ac2LabelYOffset = layout.labelRowY - layout.ac2.y - labelPad
+                  const isStacked = viewMode === 'stacked'
+                  // In stacked mode, both width dim lines sit above the top aircraft (ac2).
+                  // Order top→bottom: red (ac2) line, blue (ac1) line, then ac2 image.
+                  // Offsets are in local coords (relative to each aircraft's own y).
+                  const dimLineGap = 18
+                  let ac1LabelYOffset: number, ac2LabelYOffset: number
+                  if (isStacked) {
+                    // All width dim lines sit above the topmost aircraft (ghost if present, else ac2).
+                    // Order top→bottom: purple (ghost), red (ac2), blue (ac1).
+                    const hasGhost = !!(ghostSil && layout.ghost)
+                    const topY = hasGhost ? layout.ghost.y : layout.ac2.y
+                    // Blue (ac1) is closest to the aircraft, red (ac2) above it
+                    const ac1CanvasY = topY - labelPad
+                    const ac2CanvasY = topY - labelPad - dimLineGap
+                    ac1LabelYOffset = ac1CanvasY - layout.ac1.y
+                    ac2LabelYOffset = ac2CanvasY - layout.ac2.y
+                  } else if (isOverlay) {
+                    // Overlay: stagger like stacked — red (ac2) above blue (ac1)
+                    ac1LabelYOffset = layout.labelRowY - layout.ac1.y - labelPad
+                    ac2LabelYOffset = layout.labelRowY - layout.ac2.y - labelPad - dimLineGap
+                  } else {
+                    ac1LabelYOffset = layout.labelRowY - layout.ac1.y - labelPad
+                    ac2LabelYOffset = layout.labelRowY - layout.ac2.y - labelPad
+                  }
+
+                  // In stacked mode, align all height dimension lines at the same X
+                  // (based on the widest aircraft), so they form a contiguous vertical line
+                  const isSideBySide = viewMode === 'side-by-side'
+                  let ac1HeightDimX: number | undefined
+                  let ac2HeightDimX: number | undefined
+                  if (isStacked) {
+                    const maxWidthPx = Math.max(sil1.widthM, sil2.widthM, ...(ghostSil ? [ghostSil.widthM] : [])) * layout.pixelsPerMeter
+                    // Target canvas X = leftmost aircraft X + widest aircraft width + margin
+                    const targetCanvasX = Math.min(layout.ac1.x, layout.ac2.x) + maxWidthPx + 10
+                    // Convert to local coords for each aircraft
+                    ac1HeightDimX = targetCanvasX - layout.ac1.x
+                    ac2HeightDimX = targetCanvasX - layout.ac2.x
+                  }
+
+                  // In side-by-side, AC1 height dim is drawn on the ruler axis (in ComparisonCanvas after AxisRulers)
+                  const ac1HeightSide: 'left' | 'right' = 'right'
+                  const ac1ShowHeightDim = !isSideBySide
+
                   const silhouettes = [
                     <AircraftSilhouette
                       key={`ac1-${aircraft1.slug}-${viewAngle}`}
@@ -386,10 +452,14 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                       label={aircraft1.name}
                       blueprintUrl={blueprint1Url}
                       isDarkMode={isDarkMode}
+                      viewAngle={viewAngle}
                       showDimensions={showMeasurements}
-                      showLengthBar={isOverlay}
+                      showHeightDim={ac1ShowHeightDim}
+                      showLengthBar={false}
                       lengthBarIndex={0}
                       labelYOffset={ac1LabelYOffset}
+                      heightDimXOffset={ac1HeightDimX}
+                      heightDimSide={ac1HeightSide}
                     />,
                     <AircraftSilhouette
                       key={`ac2-${aircraft2.slug}-${viewAngle}`}
@@ -402,37 +472,49 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                       label={aircraft2.name}
                       blueprintUrl={blueprint2Url}
                       isDarkMode={isDarkMode}
+                      viewAngle={viewAngle}
                       showDimensions={showMeasurements}
-                      showLengthBar={isOverlay}
+                      showLengthBar={false}
                       lengthBarIndex={1}
                       labelYOffset={ac2LabelYOffset}
+                      heightDimXOffset={ac2HeightDimX}
                     />,
                   ]
                   return ac1First ? silhouettes : [silhouettes[1], silhouettes[0]]
                 })()}
               </AnimatePresence>
 
-              {/* Dimension bars: width below GND, height alongside aircraft */}
-              {showMeasurements && !isOverlay && (() => {
+              {/* Dimension bars: name + dimensions below ground line (always visible) */}
+              {(() => {
                 const ppm = layout.pixelsPerMeter
 
-                const entries: { name: string; color: string; widthM: number; heightM: number; acX: number }[] = [
-                  { name: aircraft1.name, color: AIRCRAFT1_COLOR, widthM: sil1.widthM, heightM: sil1.heightM, acX: layout.ac1.x },
-                  { name: aircraft2.name, color: AIRCRAFT2_COLOR, widthM: sil2.widthM, heightM: sil2.heightM, acX: layout.ac2.x },
-                ]
-                if (ghostSpec && ghostSil && layout.ghost) {
-                  entries.push({ name: ghostSpec.name, color: '#a78bfa', widthM: ghostSil.widthM, heightM: ghostSil.heightM, acX: layout.ghost.x })
-                }
+                const isSideBySide = viewMode === 'side-by-side'
+                // When bars are stacked (not side-by-side), order top→bottom: ghost purple, red, blue
+                const ghostEntry = ghostSpec && ghostSil && layout.ghost
+                  ? { name: ghostSpec.name, color: '#a78bfa', widthM: ghostSil.widthM, heightM: ghostSil.heightM, acX: layout.ghost.x }
+                  : null
+                const entries: { name: string; color: string; widthM: number; heightM: number; acX: number }[] = isSideBySide
+                  ? [
+                      { name: aircraft1.name, color: AIRCRAFT1_COLOR, widthM: sil1.widthM, heightM: sil1.heightM, acX: layout.ac1.x },
+                      { name: aircraft2.name, color: AIRCRAFT2_COLOR, widthM: sil2.widthM, heightM: sil2.heightM, acX: layout.ac2.x },
+                      ...(ghostEntry ? [ghostEntry] : []),
+                    ]
+                  : [
+                      ...(ghostEntry ? [ghostEntry] : []),
+                      { name: aircraft2.name, color: AIRCRAFT2_COLOR, widthM: sil2.widthM, heightM: sil2.heightM, acX: layout.ac2.x },
+                      { name: aircraft1.name, color: AIRCRAFT1_COLOR, widthM: sil1.widthM, heightM: sil1.heightM, acX: layout.ac1.x },
+                    ]
 
                 return (
                   <g>
                     {entries.map((e, i) => {
-                      const barW = e.widthM * ppm
                       const barH = 16
-                      const isSideBySide = viewMode === 'side-by-side'
                       const y = layout.groundY + 6 + (isSideBySide ? 0 : i * (barH + 3))
-                      const lblText = `${e.name}    ${e.widthM.toFixed(1)} m`
-                      const x = e.acX
+                      const lblText = `${e.name} · ${e.widthM.toFixed(1)} × ${e.heightM.toFixed(1)}m`
+                      // In overlay, all bars left-align and span the widest aircraft
+                      const maxWidthPx = Math.max(sil1.widthM, sil2.widthM) * ppm
+                      const barW = isOverlay ? maxWidthPx : e.widthM * ppm
+                      const x = isOverlay ? layout.ac1.x + ((sil1.widthM * ppm) - maxWidthPx) / 2 : e.acX
                       return (
                         <g key={`wb-${i}`} opacity={0.85}>
                           <rect x={x} y={y} width={barW} height={barH} rx={2}
@@ -450,6 +532,50 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                 )
               })()}
 
+              {/* Combined height dimension for stacked view */}
+              {showMeasurements && viewMode === 'stacked' && (() => {
+                const ppm = layout.pixelsPerMeter
+                // Sum individually-rounded values so displayed total matches the parts
+                const combinedHeightM = [
+                  Math.round(sil1.heightM * 10) / 10,
+                  Math.round(sil2.heightM * 10) / 10,
+                  ...(ghostSpec && ghostSil ? [Math.round(ghostSil.heightM * 10) / 10] : []),
+                ].reduce((a, b) => a + b, 0)
+                const maxWidthPx = Math.max(sil1.widthM, sil2.widthM, ...(ghostSpec && ghostSil ? [ghostSil.widthM] : [])) * ppm
+                // Position 20px to the right of the individual aligned height dim lines
+                const lineX = Math.min(layout.ac1.x, layout.ac2.x) + maxWidthPx + 30
+                const topY = layout.groundY - combinedHeightM * ppm
+                const bottomY = layout.groundY
+                const tickX1 = lineX - 5
+                const tickX2 = lineX + 5
+                const midY = (topY + bottomY) / 2
+                const combinedColor = isDarkMode ? '#e2e8f0' : '#334155'
+                return (
+                  <g opacity={0.9}>
+                    <line x1={lineX} y1={topY} x2={lineX} y2={bottomY} stroke={combinedColor} strokeWidth={1} />
+                    <line x1={tickX1} y1={topY} x2={tickX2} y2={topY} stroke={combinedColor} strokeWidth={1} />
+                    <line x1={tickX1} y1={bottomY} x2={tickX2} y2={bottomY} stroke={combinedColor} strokeWidth={1} />
+                    <text
+                      x={lineX + 2}
+                      y={midY}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fill={combinedColor}
+                      fontSize={9}
+                      fontWeight={700}
+                      fontFamily={MONO_FONT}
+                      transform={`rotate(-90, ${lineX + 2}, ${midY})`}
+                      paintOrder="stroke"
+                      stroke={isDarkMode ? '#0a1929' : '#f8fafc'}
+                      strokeWidth={3}
+                      strokeLinejoin="round"
+                    >
+                      {combinedHeightM.toFixed(1)} m
+                    </text>
+                  </g>
+                )
+              })()}
+
               {/* Axis rulers (always visible, rendered on top) */}
               <AxisRulers
                 width={layout.canvasWidth}
@@ -458,6 +584,39 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                 groundY={layout.groundY}
                 isDark={isDarkMode}
               />
+
+              {/* AC1 height dimension on the ruler axis (side-by-side only, drawn after rulers so it's visible) */}
+              {showMeasurements && viewMode === 'side-by-side' && sil1 && (() => {
+                const lineX = RULER_MARGIN
+                const topY = layout.ac1.y
+                const bottomY = layout.groundY
+                const tickHalf = 5
+                const midY = (topY + bottomY) / 2
+                return (
+                  <g opacity={0.8}>
+                    <line x1={lineX} y1={topY} x2={lineX} y2={bottomY} stroke={AIRCRAFT1_COLOR} strokeWidth={0.8} />
+                    <line x1={lineX - tickHalf} y1={topY} x2={lineX + tickHalf} y2={topY} stroke={AIRCRAFT1_COLOR} strokeWidth={0.8} />
+                    <line x1={lineX - tickHalf} y1={bottomY} x2={lineX + tickHalf} y2={bottomY} stroke={AIRCRAFT1_COLOR} strokeWidth={0.8} />
+                    <text
+                      x={lineX}
+                      y={midY}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fill={AIRCRAFT1_COLOR}
+                      fontSize={8}
+                      fontWeight={600}
+                      fontFamily={MONO_FONT}
+                      transform={`rotate(-90, ${lineX}, ${midY})`}
+                      paintOrder="stroke"
+                      stroke={isDarkMode ? '#0a1929' : '#f8fafc'}
+                      strokeWidth={3}
+                      strokeLinejoin="round"
+                    >
+                      {sil1.heightM.toFixed(1)} m
+                    </text>
+                  </g>
+                )
+              })()}
             </svg>
           </TransformComponent>
         </TransformWrapper>

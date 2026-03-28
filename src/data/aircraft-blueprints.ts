@@ -1,12 +1,13 @@
 /**
  * Aircraft Blueprint SVG Registry
  *
- * Maps aircraft slugs to their CAD-exported SVG blueprint filenames,
+ * Maps aircraft slugs to their CAD-exported SVG/PNG blueprint filenames,
  * with separate crops for each view angle (side, top, front).
- * These are detailed technical drawings from the bigNuts collection,
- * used in blueprint mode when available (replacing procedural generation).
  *
- * SVG files are stored in /public/aircraft-images/blueprint/
+ * Only high-quality CAD exports are registered here (bigNuts collection).
+ * All other aircraft fall through to procedural silhouette rendering.
+ *
+ * SVG/PNG files are stored in /public/aircraft-images/blueprint/
  */
 
 import type { ViewAngle } from '@/types/canvas'
@@ -17,7 +18,6 @@ interface BlueprintViews {
   front: string
 }
 
-// Slug → per-view SVG filename mapping
 const BLUEPRINT_REGISTRY: Record<string, BlueprintViews> = {
   'A350-1000': {
     side: 'a350-1000-side.svg',

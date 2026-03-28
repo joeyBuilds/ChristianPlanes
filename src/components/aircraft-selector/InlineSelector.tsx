@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Search, ChevronDown, X } from 'lucide-react'
 import { aircraftCatalog } from '@/data/aircraft-catalog'
+import { hasAircraftBlueprint } from '@/data/aircraft-blueprints'
 import { cn } from '@/lib/utils'
 
 interface InlineSelectorProps {
@@ -58,10 +59,12 @@ export function InlineSelector({ selectedSlug, onSelect, accentColor, align = 'l
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          'flex items-center justify-center gap-1.5 w-full py-2 text-sm font-semibold transition-colors cursor-pointer rounded-md',
+          'flex items-center justify-center gap-1 sm:gap-1.5 w-full py-2 text-xs sm:text-sm font-semibold transition-colors cursor-pointer rounded-md border',
           textColor,
           hoverColor,
-          accentColor === 'blue' ? 'hover:bg-blue-500/5' : 'hover:bg-red-500/5'
+          accentColor === 'blue'
+            ? 'border-blue-500/20 hover:border-blue-500/40 hover:bg-blue-500/5'
+            : 'border-red-500/20 hover:border-red-500/40 hover:bg-red-500/5'
         )}
       >
         <span className="truncate">{selected ? selected.displayName : 'Select...'}</span>
@@ -70,7 +73,7 @@ export function InlineSelector({ selectedSlug, onSelect, accentColor, align = 'l
 
       {open && (
         <div className={cn(
-          'absolute z-50 top-full mt-1 w-72 rounded-lg border border-border bg-popover shadow-xl max-h-80 overflow-hidden flex flex-col',
+          'absolute z-50 top-full mt-1 w-[calc(100vw-2rem)] sm:w-72 max-w-72 rounded-lg border border-border bg-popover shadow-xl max-h-80 overflow-hidden flex flex-col',
           align === 'right' ? 'right-0' : 'left-0'
         )}>
           <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
@@ -109,6 +112,9 @@ export function InlineSelector({ selectedSlug, onSelect, accentColor, align = 'l
                   >
                     <span className="flex items-center gap-1.5">
                       {entry.displayName}
+                      {hasAircraftBlueprint(entry.slug) && (
+                        <span className="text-[10px] font-bold leading-none px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">CAD</span>
+                      )}
                     </span>
                     <span className="text-xs text-muted-foreground capitalize">{entry.category}</span>
                   </button>

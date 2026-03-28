@@ -158,6 +158,84 @@ const server = http.createServer(async (req, res) => {
     return
   }
 
+  if (url.pathname === '/api/fleet-pulse') {
+    const typesParam = url.searchParams.get('types') || ''
+    const requestedTypes = typesParam.split(',').filter(Boolean)
+
+    if (requestedTypes.length === 0) {
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'Missing types parameter' }))
+      return
+    }
+
+    // Estimate counts based on fleet proportions
+    const FLEET_PROPORTIONS = {
+      'A320': 0.105, 'A20N': 0.065, 'B738': 0.120, 'A321': 0.045, 'A21N': 0.040,
+      'A319': 0.025, 'B737': 0.020, 'B38M': 0.035, 'B739': 0.012, 'B752': 0.015,
+      'BCS1': 0.008, 'BCS3': 0.012, 'A318': 0.002, 'B712': 0.003, 'B753': 0.003,
+      'A19N': 0.003, 'B39M': 0.005, 'B3XM': 0.001, 'B37M': 0.002,
+      'B733': 0.002, 'B734': 0.001, 'B735': 0.001, 'B736': 0.001,
+      'B77W': 0.025, 'A333': 0.020, 'B789': 0.022, 'B788': 0.015, 'B78X': 0.010,
+      'A359': 0.018, 'A35K': 0.008, 'B772': 0.015, 'B773': 0.008, 'B77L': 0.005,
+      'A332': 0.012, 'A388': 0.005, 'B744': 0.004, 'B748': 0.003,
+      'A339': 0.006, 'A338': 0.002, 'B764': 0.003, 'B763': 0.010, 'B762': 0.002,
+      'A346': 0.002, 'A345': 0.001, 'A343': 0.003, 'A342': 0.001,
+      'A306': 0.002, 'A313': 0.001, 'B732': 0.001,
+      'E75S': 0.020, 'E75L': 0.015, 'E190': 0.012, 'E195': 0.005, 'E170': 0.004,
+      'E290': 0.005, 'E295': 0.004,
+      'CRJ7': 0.010, 'CRJ9': 0.015, 'CRJX': 0.003,
+      'AJ27': 0.003, 'SU95': 0.002, 'T154': 0.001,
+      'A124': 0.001, 'MD11': 0.002, 'DC10': 0.001,
+    }
+
+    // Try OpenSky for live total flight count, fall back to typical average
+    let totalFlights = 7000 // typical global average
+    let live = false
+
+    try {
+      console.log(`Fleet pulse: fetching OpenSky states...`)
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 10000)
+      const response = await fetch('https://opensky-network.org/api/states/all', {
+        headers: { 'Accept': 'application/json' },
+        signal: controller.signal,
+      })
+      clearTimeout(timeout)
+
+      if (response.ok) {
+        const data = await response.json()
+        totalFlights = (data.states || []).length
+        live = true
+        console.log(`Fleet pulse: ${totalFlights} live flights`)
+      } else {
+        console.log(`Fleet pulse: OpenSky returned ${response.status}, using fallback`)
+      }
+    } catch (err) {
+      console.log(`Fleet pulse: OpenSky unavailable (${err.message}), using fallback estimate`)
+    }
+
+    // Apply time-of-day variance: flights peak around 14:00-20:00 UTC
+    const hour = new Date().getUTCHours()
+    const timeOfDayFactor = 0.7 + 0.6 * Math.sin(((hour - 6) / 24) * Math.PI * 2)
+    if (!live) {
+      totalFlights = Math.round(totalFlights * timeOfDayFactor)
+    }
+
+    const counts = {}
+    for (const type of requestedTypes) {
+      const prop = FLEET_PROPORTIONS[type]
+      if (prop) {
+        counts[type] = Math.round(totalFlights * prop * (0.90 + Math.random() * 0.20))
+      } else {
+        counts[type] = 0
+      }
+    }
+
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' })
+    res.end(JSON.stringify({ counts, updatedAt: new Date().toISOString(), totalFlights, live }))
+    return
+  }
+
   res.writeHead(404)
   res.end('Not found')
 })

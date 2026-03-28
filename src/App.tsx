@@ -1,12 +1,14 @@
 import { useEffect, useRef } from 'react'
 import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom'
 import { useComparisonStore } from '@/stores/comparison-store'
+import { urlSegmentToSlug } from '@/data/aircraft-catalog'
 import { Header } from '@/components/layout/Header'
 import { ComparisonCanvas } from '@/components/canvas/ComparisonCanvas'
 import { CanvasControls } from '@/components/canvas/CanvasControls'
 import { StatsPanel } from '@/components/comparison/StatsPanel'
 import { GhostStatsPanel } from '@/components/comparison/GhostStatsPanel'
 import { FunFacts } from '@/components/comparison/FunFacts'
+import { RangeMapSection } from '@/components/range-map/RangeMapSection'
 import { useAircraftData } from '@/hooks/useAircraftData'
 import { useGhostAircraft } from '@/hooks/useGhostAircraft'
 import { Loader2 } from 'lucide-react'
@@ -23,8 +25,8 @@ function ComparisonPage() {
   } = useComparisonStore()
 
   useEffect(() => {
-    if (ac1) setAircraft1(ac1)
-    if (ac2) setAircraft2(ac2)
+    if (ac1) setAircraft1(urlSegmentToSlug(ac1))
+    if (ac2) setAircraft2(urlSegmentToSlug(ac2))
   }, [ac1, ac2, setAircraft1, setAircraft2])
 
   useEffect(() => {
@@ -46,7 +48,7 @@ function ComparisonPage() {
   const { data: ghostData } = useGhostAircraft(ghostAircraftSlug)
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
       <Header />
       <main className="flex-1 max-w-7xl mx-auto w-full px-2 sm:px-4 py-3 sm:py-6 flex flex-col gap-2 sm:gap-4">
         {isLoading && (
@@ -88,6 +90,10 @@ function ComparisonPage() {
                 </div>
               )}
             </div>
+            <RangeMapSection
+              aircraft1={data.aircraft1}
+              aircraft2={data.aircraft2}
+            />
             <FunFacts
               aircraft1={data.aircraft1}
               aircraft2={data.aircraft2}

@@ -16,6 +16,8 @@ interface ComparisonState {
   showMeasurements: boolean
   showGrid: boolean
   ghostAircraftSlug: string | null
+  selectedAirportIata: string | null
+  rangeMapExpanded: boolean
 
   setAircraft1: (slug: string | null) => void
   setAircraft2: (slug: string | null) => void
@@ -28,6 +30,8 @@ interface ComparisonState {
   toggleMeasurements: () => void
   toggleGrid: () => void
   setGhostAircraft: (slug: string | null) => void
+  setSelectedAirport: (iata: string | null) => void
+  setRangeMapExpanded: (expanded: boolean) => void
 }
 
 export const useComparisonStore = create<ComparisonState>()(
@@ -44,6 +48,8 @@ export const useComparisonStore = create<ComparisonState>()(
       showMeasurements: true,
       showGrid: true,
       ghostAircraftSlug: null,
+      selectedAirportIata: null,
+      rangeMapExpanded: false,
 
       setAircraft1: (slug) => set({ aircraft1Slug: slug }),
       setAircraft2: (slug) => set({ aircraft2Slug: slug }),
@@ -59,6 +65,8 @@ export const useComparisonStore = create<ComparisonState>()(
       toggleMeasurements: () => set((s) => ({ showMeasurements: !s.showMeasurements })),
       toggleGrid: () => set((s) => ({ showGrid: !s.showGrid })),
       setGhostAircraft: (slug) => set({ ghostAircraftSlug: slug }),
+      setSelectedAirport: (iata) => set({ selectedAirportIata: iata }),
+      setRangeMapExpanded: (expanded) => set({ rangeMapExpanded: expanded }),
     }),
     {
       name: 'aircraft-compare-state',
@@ -72,6 +80,7 @@ export const useComparisonStore = create<ComparisonState>()(
         showMeasurements: state.showMeasurements,
         showGrid: state.showGrid,
         ghostAircraftSlug: state.ghostAircraftSlug,
+        selectedAirportIata: state.selectedAirportIata,
       }),
     }
   )

@@ -17,6 +17,7 @@ interface GhostAircraftProps {
   heightDimSide?: 'left' | 'right'
   showLengthBar?: boolean
   lengthBarIndex?: number
+  heightDimXOffset?: number
 }
 
 const GHOST_COLOR = '#a78bfa' // purple-400
@@ -25,7 +26,7 @@ export function GhostAircraft({
   spec, viewAngle, pixelsPerMeter, x, y,
   opacity = 0.25, isDarkMode = true, labelYOffset = -50,
   showDimensions = false, heightDimSide = 'right',
-  showLengthBar = false, lengthBarIndex = 0,
+  showLengthBar = false, lengthBarIndex = 0, heightDimXOffset,
 }: GhostAircraftProps) {
   const silhouette = useSilhouette(spec, viewAngle)
   const blueprintUrl = getAircraftBlueprintUrl(spec.slug, viewAngle)
@@ -44,11 +45,13 @@ export function GhostAircraft({
       label={`${spec.name} (ref)`}
       blueprintUrl={blueprintUrl}
       isDarkMode={isDarkMode}
+      viewAngle={viewAngle}
       labelYOffset={labelYOffset}
       showDimensions={showDimensions}
       heightDimSide={heightDimSide}
       showLengthBar={showLengthBar}
       lengthBarIndex={lengthBarIndex}
+      heightDimXOffset={heightDimXOffset}
     />
   )
 }

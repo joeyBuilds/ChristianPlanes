@@ -1,7 +1,10 @@
-import { useMemo } from 'react'
+import { useMemo, useCallback, useState } from 'react'
 import type { AircraftSpec, DualUnit } from '@/types/aircraft'
 import { useUnits } from '@/hooks/useUnits'
+import { useFleetPulse } from '@/hooks/useFleetPulse'
 import { InlineSelector } from '@/components/aircraft-selector/InlineSelector'
+import { FleetPulseBadge } from './FleetPulseBadge'
+import { aircraftCatalog } from '@/data/aircraft-catalog'
 import { cn } from '@/lib/utils'
 
 interface StatsPanelProps {
@@ -30,6 +33,26 @@ export function StatsPanel({
   onSelectAircraft2,
 }: StatsPanelProps) {
   const { formatValue, getValue } = useUnits()
+  const { count1, count2, isLoading: pulseLoading } = useFleetPulse(aircraft1Slug, aircraft2Slug)
+
+  const [spinning, setSpinning] = useState(false)
+
+  const randomize = useCallback(() => {
+    if (spinning) return
+    setSpinning(true)
+    // Delay the actual selection so the spin animation plays first
+    setTimeout(() => {
+      const slugs = aircraftCatalog.map((a) => a.slug)
+      const pick1 = slugs[Math.floor(Math.random() * slugs.length)]
+      let pick2 = slugs[Math.floor(Math.random() * slugs.length)]
+      while (pick2 === pick1 && slugs.length > 1) {
+        pick2 = slugs[Math.floor(Math.random() * slugs.length)]
+      }
+      onSelectAircraft1(pick1)
+      onSelectAircraft2(pick2)
+      setSpinning(false)
+    }, 600)
+  }, [onSelectAircraft1, onSelectAircraft2, spinning])
 
   const stats: StatDef[] = [
     { label: 'Length', value1: aircraft1.length, value2: aircraft2.length },
@@ -56,23 +79,102 @@ export function StatsPanel({
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
-      {/* ── Row 1: aircraft selectors ── */}
-      <div className="grid grid-cols-2 items-center border-b border-border/40 bg-muted/20 min-h-[40px]">
-        <div className="flex items-center justify-center px-2">
+      {/* ── Row 1: aircraft selectors + random button ── */}
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center border-b border-border/40 bg-muted/20 min-h-[40px]">
+        <div className="flex flex-col items-center justify-center px-2 py-1.5">
           <InlineSelector
             selectedSlug={aircraft1Slug}
             onSelect={onSelectAircraft1}
             accentColor="blue"
             align="left"
           />
+          <FleetPulseBadge count={count1} isLoading={pulseLoading} />
         </div>
-        <div className="flex items-center justify-center px-2">
+        <button
+          onClick={randomize}
+          className="group flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg cursor-pointer select-none transition-all duration-300 hover:scale-105"
+          title="Random matchup"
+        >
+          <span className="text-[7px] font-bold uppercase tracking-[0.18em] text-muted-foreground/25 group-hover:text-amber-400/70 transition-colors duration-300">
+            Random
+          </span>
+          {/* Slot machine frame */}
+          <div className="relative rounded-md border-2 border-amber-700/30 group-hover:border-amber-400/60 bg-gradient-to-b from-neutral-900/80 to-neutral-800/80 dark:from-neutral-900 dark:to-neutral-950 p-[3px] transition-all duration-300 group-hover:shadow-[0_0_12px_rgba(251,191,36,0.3)]">
+            {/* Top accent bar */}
+            <div className="h-[2px] rounded-full bg-gradient-to-r from-transparent via-amber-500/40 to-transparent group-hover:via-amber-400/80 mb-[2px] transition-all" />
+            {/* Reels */}
+            <div className="flex gap-[2px]">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    'w-[16px] h-[20px] rounded-[2px] flex items-center justify-center overflow-hidden transition-all duration-300',
+                    'bg-gradient-to-b from-neutral-800 to-neutral-900 dark:from-black/60 dark:to-black/80',
+                    'border border-amber-900/20 group-hover:border-amber-400/30',
+                    !spinning && 'group-hover:shadow-[inset_0_0_8px_rgba(251,191,36,0.15)]',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'text-[12px] font-black font-mono leading-none transition-all duration-200',
+                      spinning
+                        ? 'animate-slot-spin'
+                        : 'text-amber-600/40 group-hover:animate-slot-rainbow',
+                    )}
+                    style={{
+                      ...(spinning ? { animationDelay: `${i * 80}ms` } : {}),
+                      ...(!spinning ? { animationDelay: `${i * 150}ms` } : {}),
+                      textShadow: 'none',
+                    }}
+                  >
+                    7
+                  </span>
+                </div>
+              ))}
+            </div>
+            {/* Bottom accent bar */}
+            <div className="h-[2px] rounded-full bg-gradient-to-r from-transparent via-amber-500/40 to-transparent group-hover:via-amber-400/80 mt-[2px] transition-all" />
+          </div>
+          {/* Pull lever nub */}
+          <div className="w-[4px] h-[4px] rounded-full bg-red-600/30 group-hover:bg-red-500 group-hover:shadow-[0_0_6px_rgba(239,68,68,0.5)] transition-all duration-300" />
+          <span className="text-[7px] font-bold uppercase tracking-[0.18em] text-muted-foreground/25 group-hover:text-amber-400/70 transition-colors duration-300">
+            Pull
+          </span>
+          <style>{`
+            @keyframes slot-spin {
+              0% { transform: translateY(0); opacity: 1; color: #f59e0b; }
+              15% { transform: translateY(-14px); opacity: 0; }
+              30% { transform: translateY(14px); opacity: 0; }
+              50% { transform: translateY(-8px); opacity: 0.4; color: #ef4444; }
+              70% { transform: translateY(3px); opacity: 0.8; color: #22c55e; }
+              85% { transform: translateY(-1px); opacity: 1; color: #f59e0b; }
+              100% { transform: translateY(0); opacity: 1; color: #f59e0b; }
+            }
+            .animate-slot-spin {
+              animation: slot-spin 0.55s ease-in-out;
+            }
+            @keyframes slot-rainbow {
+              0%, 100% { color: #ef4444; text-shadow: 0 0 6px rgba(239,68,68,0.6); }
+              14% { color: #f97316; text-shadow: 0 0 6px rgba(249,115,22,0.6); }
+              28% { color: #eab308; text-shadow: 0 0 6px rgba(234,179,8,0.6); }
+              42% { color: #22c55e; text-shadow: 0 0 6px rgba(34,197,94,0.6); }
+              57% { color: #3b82f6; text-shadow: 0 0 6px rgba(59,130,246,0.6); }
+              71% { color: #8b5cf6; text-shadow: 0 0 6px rgba(139,92,246,0.6); }
+              85% { color: #ec4899; text-shadow: 0 0 6px rgba(236,72,153,0.6); }
+            }
+            .group:hover .group-hover\\:animate-slot-rainbow {
+              animation: slot-rainbow 1.2s ease-in-out infinite;
+            }
+          `}</style>
+        </button>
+        <div className="flex flex-col items-center justify-center px-2 py-1.5">
           <InlineSelector
             selectedSlug={aircraft2Slug}
             onSelect={onSelectAircraft2}
             accentColor="red"
             align="right"
           />
+          <FleetPulseBadge count={count2} isLoading={pulseLoading} />
         </div>
       </div>
 

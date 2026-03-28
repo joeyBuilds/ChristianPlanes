@@ -1210,7 +1210,11 @@ export function generateSilhouette(
   _category: AircraftCategory,
   view: 'side' | 'top' | 'front',
 ): SilhouetteData {
-  const padding = 1
+  // No viewBox padding — AircraftSilhouette renders the inner <svg> with
+  // overflow="visible", so strokes are never clipped.  Padding > 0 would
+  // shift the path away from the bounding-box edges, making aircraft float
+  // above the GND line by different amounts depending on their height.
+  const padding = 0
 
   if (view === 'side') {
     const path = generateSideViewPath(spec)

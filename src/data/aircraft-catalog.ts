@@ -134,3 +134,13 @@ export function getAircraftBySlug(slug: string): AircraftCatalogEntry | undefine
 export function slugToUrlSegment(slug: string): string {
   return slug.replace(/ /g, '_')
 }
+
+export function urlSegmentToSlug(segment: string): string {
+  // Try exact match first (covers slugs without spaces)
+  const exact = aircraftCatalog.find((a) => a.slug === segment)
+  if (exact) return exact.slug
+  // Convert underscores back to spaces and try again
+  const withSpaces = segment.replace(/_/g, ' ')
+  const match = aircraftCatalog.find((a) => a.slug === withSpaces)
+  return match ? match.slug : segment
+}

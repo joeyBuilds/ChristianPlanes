@@ -15,11 +15,17 @@ interface AircraftSilhouetteProps {
   isDarkMode?: boolean
   labelYOffset?: number
   showDimensions?: boolean
+  /** Override to hide the height dimension line (e.g. when drawn externally) */
+  showHeightDim?: boolean
   heightDimSide?: 'left' | 'right'
   /** Show a colored length bar below the aircraft (reference-image style) */
   showLengthBar?: boolean
   /** Vertical offset for length bar when multiple bars are stacked */
   lengthBarIndex?: number
+  /** Override the X position of the height dimension line (in local coords). Used to align lines in stacked view. */
+  heightDimXOffset?: number
+  /** Current view angle — used to adjust rendering for top view */
+  viewAngle?: 'side' | 'top' | 'front'
   onHover?: (hovered: boolean) => void
 }
 
@@ -35,9 +41,12 @@ export function AircraftSilhouette({
   isDarkMode = true,
   labelYOffset = -12,
   showDimensions = false,
+  showHeightDim,
   heightDimSide = 'right',
   showLengthBar = false,
   lengthBarIndex = 0,
+  heightDimXOffset,
+  viewAngle = 'side',
   onHover,
 }: AircraftSilhouetteProps) {
   const [hovered, setHovered] = useState(false)
@@ -86,19 +95,6 @@ export function AircraftSilhouette({
                 transition: 'filter 0.2s',
               }}
             />
-            {/* Color overlay tint for the blueprint — only when measurements on */}
-            {showDimensions && (
-              <rect
-                x={0}
-                y={0}
-                width={width}
-                height={height}
-                fill={color}
-                fillOpacity={hovered ? 0.12 : 0.06}
-                rx={2}
-                style={{ pointerEvents: 'none', mixBlendMode: 'overlay' }}
-              />
-            )}
             {/* "CAD" badge to indicate real blueprint — only when measurements on */}
             {showDimensions && <g opacity={0.6}>
               <rect
@@ -170,12 +166,13 @@ export function AircraftSilhouette({
         )}
 
         {/* Height dimension — vertical bar on the configured side */}
-        {showDimensions && (
+        {showDimensions && (showHeightDim ?? true) && (
           <g opacity={0.8}>
             {(() => {
-              const lineX = heightDimSide === 'right' ? width + 10 : -10
-              const tickX1 = heightDimSide === 'right' ? width + 5 : -15
-              const tickX2 = heightDimSide === 'right' ? width + 15 : -5
+              const lineX = heightDimXOffset != null ? heightDimXOffset : (heightDimSide === 'right' ? width + 10 : -10)
+              const tickHalf = 5
+              const tickX1 = lineX - tickHalf
+              const tickX2 = lineX + tickHalf
               const midY = height / 2
               return (
                 <>
@@ -230,51 +227,33 @@ export function AircraftSilhouette({
           </g>
         )}
 
-        {/* Thin horizontal line at label row + name label pill */}
+        {/* Width/length dimension line above aircraft (thin line with ticks, matching height dim style) */}
         {!showLengthBar && showDimensions && (() => {
-          const dimSuffix = showDimensions
-            ? ` · ${silhouette.widthM.toFixed(1)} × ${silhouette.heightM.toFixed(1)}m`
-            : ''
-          const fullLabel = label + dimSuffix
-          const lblW = fullLabel.length * 6.2 + 14
           const lineY = labelYOffset + 8
+          const tickHalf = 5
+          const tickY1 = lineY - tickHalf
+          const tickY2 = lineY + tickHalf
+          const midX = width / 2
           return (
-            <g>
-              {/* Thin horizontal line spanning the aircraft width at the label row */}
-              <line
-                x1={0}
-                y1={lineY}
-                x2={width}
-                y2={lineY}
-                stroke={color}
-                strokeWidth={0.6}
-                strokeOpacity={0.5}
-              />
-              {/* Name tag pill */}
-              <rect
-                x={width / 2 - lblW / 2}
-                y={labelYOffset - 9}
-                width={lblW}
-                height={16}
-                rx={3}
-                fill={isDarkMode ? '#0a1929' : 'rgba(255,255,255,0.85)'}
-                fillOpacity={0.9}
-                stroke={color}
-                strokeWidth={0.5}
-                strokeOpacity={0.4}
-              />
+            <g opacity={0.8}>
+              <line x1={0} y1={lineY} x2={width} y2={lineY} stroke={color} strokeWidth={0.8} />
+              <line x1={0} y1={tickY1} x2={0} y2={tickY2} stroke={color} strokeWidth={0.8} />
+              <line x1={width} y1={tickY1} x2={width} y2={tickY2} stroke={color} strokeWidth={0.8} />
               <text
-                x={width / 2}
-                y={labelYOffset + 3}
+                x={midX}
+                y={lineY}
                 textAnchor="middle"
+                dominantBaseline="middle"
                 fill={color}
-                fillOpacity={0.95}
-                fontSize={10}
+                fontSize={8}
                 fontWeight={600}
                 fontFamily={monoFont}
-                letterSpacing="0.3px"
+                paintOrder="stroke"
+                stroke={isDarkMode ? '#0a1929' : '#f8fafc'}
+                strokeWidth={3}
+                strokeLinejoin="round"
               >
-                {fullLabel}
+                {silhouette.widthM.toFixed(1)} m
               </text>
             </g>
           )

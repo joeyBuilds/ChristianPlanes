@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Search, ChevronDown, X } from 'lucide-react'
 import { aircraftCatalog } from '@/data/aircraft-catalog'
+import { hasAircraftBlueprint } from '@/data/aircraft-blueprints'
 import { cn } from '@/lib/utils'
 
 interface AircraftSelectorProps {
@@ -118,7 +119,12 @@ export function AircraftSelector({ label, selectedSlug, onSelect, accentColor }:
                       entry.slug === selectedSlug ? 'bg-accent text-accent-foreground font-medium' : 'text-foreground'
                     )}
                   >
-                    <span>{entry.displayName}</span>
+                    <span className="flex items-center gap-1.5">
+                      {entry.displayName}
+                      {hasAircraftBlueprint(entry.slug) && (
+                        <span className="text-[10px] font-bold leading-none px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">CAD</span>
+                      )}
+                    </span>
                     <span className="text-xs text-muted-foreground capitalize">{entry.category}</span>
                   </button>
                 ))}

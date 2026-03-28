@@ -41,28 +41,45 @@ export function CanvasControls({ canvasRef, statsRef }: CanvasControlsProps) {
   } = useComparisonStore()
   const isDarkMode = useIsDarkMode()
 
-  const btn = 'p-1.5 rounded-md transition-all cursor-pointer'
-  const ico = 'w-3.5 h-3.5'
+  const btn = 'p-2 sm:p-1.5 rounded-md transition-all cursor-pointer'
+  const ico = 'w-4 h-4 sm:w-3.5 sm:h-3.5'
 
   const on = 'bg-blue-500/15 text-blue-400 border-blue-500/25'
   const off = 'text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-muted/40 border-transparent'
   const groupLabel = 'text-[8px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/30 mb-1 text-center'
 
   return (
-    <div className="flex items-start justify-center gap-4 sm:gap-6 py-2 px-2">
+    <div className="flex flex-wrap items-start justify-center gap-3 sm:gap-6 py-2 px-2">
       {/* ── View ── */}
       <div className="flex flex-col items-center">
         <span className={groupLabel}>Layout</span>
         <div className="flex items-center gap-0.5 rounded-lg border border-border/30 bg-muted/10 p-0.5">
-          <button
-            onClick={() => viewMode === 'stacked' ? cycleStackAlignment() : setViewMode('stacked')}
-            className={cn(btn, 'border', viewMode === 'stacked' ? on : off)}
-            title={viewMode === 'stacked' ? `Stacked · ${stackAlignment}` : 'Stacked'}
-          >
-            <AlignVerticalJustifyStart className={cn(ico, 'transition-transform',
-              viewMode === 'stacked' && stackAlignment === 'right' && 'scale-x-[-1]'
-            )} />
-          </button>
+          {/* Stacked button with alignment sub-mode indicator */}
+          <div className="relative flex flex-col items-center">
+            <button
+              onClick={() => viewMode === 'stacked' ? cycleStackAlignment() : setViewMode('stacked')}
+              className={cn(btn, 'border', viewMode === 'stacked' ? on : off)}
+              title={viewMode === 'stacked' ? `Stacked · ${stackAlignment} (click to cycle)` : 'Stacked'}
+            >
+              <AlignVerticalJustifyStart className={cn(ico, 'transition-transform',
+                viewMode === 'stacked' && stackAlignment === 'right' && 'scale-x-[-1]'
+              )} />
+            </button>
+            {/* Alignment dots — only visible when stacked is active */}
+            {viewMode === 'stacked' && (
+              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex gap-[3px]">
+                {(['left', 'center', 'right'] as const).map((a) => (
+                  <span
+                    key={a}
+                    className={cn(
+                      'block w-1 h-1 rounded-full transition-colors',
+                      stackAlignment === a ? 'bg-blue-400' : 'bg-muted-foreground/25',
+                    )}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setViewMode('side-by-side')}
             className={cn(btn, 'border', viewMode === 'side-by-side' ? on : off)}
@@ -213,7 +230,7 @@ function GhostSelector({ selectedSlug, onSelect, btn, ico }: {
       </button>
 
       {open && (
-        <div className="absolute z-50 bottom-full mb-1 right-0 sm:left-1/2 sm:-translate-x-1/2 sm:right-auto w-72 rounded-lg border border-border bg-popover shadow-xl max-h-72 overflow-hidden flex flex-col">
+        <div className="absolute z-50 bottom-full mb-1 right-0 sm:left-1/2 sm:-translate-x-1/2 sm:right-auto w-[calc(100vw-2rem)] sm:w-72 max-w-72 rounded-lg border border-border bg-popover shadow-xl max-h-72 overflow-hidden flex flex-col">
           <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
             <Search className="w-4 h-4 text-muted-foreground shrink-0" />
             <input
