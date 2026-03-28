@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { Search, ChevronDown, X, Filter } from 'lucide-react'
 import { aircraftCatalog } from '@/data/aircraft-catalog'
-import { hasAircraftBlueprint } from '@/data/aircraft-blueprints'
+import { hasAircraftBlueprint, hasFullBlueprint } from '@/data/aircraft-blueprints'
 import { cn } from '@/lib/utils'
 
 interface InlineSelectorProps {
@@ -207,7 +207,12 @@ export function InlineSelector({ selectedSlug, onSelect, accentColor, align = 'l
                       <span className="flex items-center gap-1.5">
                         {entry.displayName}
                         {hasCad && (
-                          <span className="text-[10px] font-bold leading-none px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">CAD</span>
+                          <span className={cn(
+                          "text-[10px] font-bold leading-none px-1 py-0.5 rounded",
+                          hasFullBlueprint(entry.slug)
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                        )}>CAD</span>
                         )}
                       </span>
                       <span className="text-xs text-muted-foreground capitalize">{entry.category}</span>
@@ -239,7 +244,12 @@ export function InlineSelector({ selectedSlug, onSelect, accentColor, align = 'l
                         <span className="flex items-center gap-1.5">
                           {entry.displayName}
                           {hasAircraftBlueprint(entry.slug) && (
-                            <span className="text-[10px] font-bold leading-none px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">CAD</span>
+                            <span className={cn(
+                          "text-[10px] font-bold leading-none px-1 py-0.5 rounded",
+                          hasFullBlueprint(entry.slug)
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                        )}>CAD</span>
                           )}
                         </span>
                         <span className="text-xs text-muted-foreground capitalize">{entry.category}</span>

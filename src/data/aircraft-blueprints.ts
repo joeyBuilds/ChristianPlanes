@@ -164,3 +164,13 @@ export function getAircraftBlueprintUrl(slug: string, view: ViewAngle = 'side'):
 export function hasAircraftBlueprint(slug: string): boolean {
   return slug in BLUEPRINT_REGISTRY
 }
+
+/**
+ * Check if an aircraft has all 3 views (side, top, front).
+ * Returns false if any view is missing.
+ */
+export function hasFullBlueprint(slug: string): boolean {
+  const views = BLUEPRINT_REGISTRY[slug]
+  if (!views) return false
+  return !!(views.side && views.top && views.front)
+}
