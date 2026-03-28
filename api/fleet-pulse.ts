@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-// In-memory cache shared across warm invocations
-let cachedResult: { counts: Record<string, number>; totalFlights: number; live: boolean } | null = null
+// In-memory cache shared across warm invocations — stores only totalFlights + live
+let cachedState: { totalFlights: number; live: boolean } | null = null
 let cachedAt = 0
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
@@ -41,68 +41,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const now = Date.now()
 
-  // Use cache if fresh
-  if (cachedResult && now - cachedAt < CACHE_TTL) {
-    return res.status(200).json({
-      counts: filterCounts(cachedResult.counts, requestedTypes),
-      updatedAt: new Date(cachedAt).toISOString(),
-      totalFlights: cachedResult.totalFlights,
-      live: cachedResult.live,
-      cached: true,
-    })
-  }
+  // Refresh totalFlights if cache is stale
+  if (!cachedState || now - cachedAt >= CACHE_TTL) {
+    let totalFlights = 7000
+    let live = false
 
-  // Try OpenSky for live total, fall back to time-adjusted estimate
-  let totalFlights = 7000
-  let live = false
+    try {
+      const response = await fetch('https://opensky-network.org/api/states/all', {
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(10000),
+      })
 
-  try {
-    const response = await fetch('https://opensky-network.org/api/states/all', {
-      headers: { 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(10000),
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      totalFlights = (data.states || []).length
-      live = true
+      if (response.ok) {
+        const data = await response.json()
+        totalFlights = (data.states || []).length
+        live = true
+      }
+    } catch {
+      // Fall through to estimate
     }
-  } catch {
-    // Fall through to estimate
+
+    // Apply time-of-day variance when using fallback
+    if (!live) {
+      const hour = new Date().getUTCHours()
+      const timeOfDayFactor = 0.7 + 0.6 * Math.sin(((hour - 6) / 24) * Math.PI * 2)
+      totalFlights = Math.round(totalFlights * timeOfDayFactor)
+    }
+
+    cachedState = { totalFlights, live }
+    cachedAt = now
   }
 
-  // Apply time-of-day variance when using fallback
-  if (!live) {
-    const hour = new Date().getUTCHours()
-    const timeOfDayFactor = 0.7 + 0.6 * Math.sin(((hour - 6) / 24) * Math.PI * 2)
-    totalFlights = Math.round(totalFlights * timeOfDayFactor)
-  }
-
+  // Always compute counts for the requested types from the cached totalFlights
   const counts: Record<string, number> = {}
   for (const type of requestedTypes) {
     const proportion = FLEET_PROPORTIONS[type]
-    if (proportion) {
-      counts[type] = Math.round(totalFlights * proportion * (0.90 + Math.random() * 0.20))
-    } else {
-      counts[type] = 0
-    }
+    counts[type] = proportion
+      ? Math.round(cachedState.totalFlights * proportion * (0.90 + Math.random() * 0.20))
+      : 0
   }
-
-  cachedResult = { counts, totalFlights, live }
-  cachedAt = now
 
   return res.status(200).json({
-    counts: filterCounts(counts, requestedTypes),
-    updatedAt: new Date(now).toISOString(),
-    totalFlights,
-    live,
+    counts,
+    updatedAt: new Date(cachedAt).toISOString(),
+    totalFlights: cachedState.totalFlights,
+    live: cachedState.live,
   })
-}
-
-function filterCounts(counts: Record<string, number>, types: string[]): Record<string, number> {
-  const result: Record<string, number> = {}
-  for (const t of types) {
-    if (t in counts) result[t] = counts[t]
-  }
-  return result
 }
