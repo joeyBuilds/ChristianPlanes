@@ -24,8 +24,6 @@ interface AircraftSilhouetteProps {
   lengthBarIndex?: number
   /** Override the X position of the height dimension line (in local coords). Used to align lines in stacked view. */
   heightDimXOffset?: number
-  /** Current view angle — used to adjust rendering for top view */
-  viewAngle?: 'side' | 'top' | 'front'
   onHover?: (hovered: boolean) => void
 }
 
@@ -46,7 +44,6 @@ export function AircraftSilhouette({
   showLengthBar = false,
   lengthBarIndex = 0,
   heightDimXOffset,
-  viewAngle = 'side',
   onHover,
 }: AircraftSilhouetteProps) {
   const [hovered, setHovered] = useState(false)

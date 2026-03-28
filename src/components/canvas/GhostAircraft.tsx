@@ -45,7 +45,6 @@ export function GhostAircraft({
       label={`${spec.name} (ref)`}
       blueprintUrl={blueprintUrl}
       isDarkMode={isDarkMode}
-      viewAngle={viewAngle}
       labelYOffset={labelYOffset}
       showDimensions={showDimensions}
       heightDimSide={heightDimSide}

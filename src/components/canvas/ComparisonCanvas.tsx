@@ -407,7 +407,7 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                     // All width dim lines sit above the topmost aircraft (ghost if present, else ac2).
                     // Order top→bottom: purple (ghost), red (ac2), blue (ac1).
                     const hasGhost = !!(ghostSil && layout.ghost)
-                    const topY = hasGhost ? layout.ghost.y : layout.ac2.y
+                    const topY = hasGhost ? layout.ghost!.y : layout.ac2.y
                     // Blue (ac1) is closest to the aircraft, red (ac2) above it
                     const ac1CanvasY = topY - labelPad
                     const ac2CanvasY = topY - labelPad - dimLineGap
@@ -452,7 +452,7 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                       label={aircraft1.name}
                       blueprintUrl={blueprint1Url}
                       isDarkMode={isDarkMode}
-                      viewAngle={viewAngle}
+
                       showDimensions={showMeasurements}
                       showHeightDim={ac1ShowHeightDim}
                       showLengthBar={false}
@@ -472,7 +472,7 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                       label={aircraft2.name}
                       blueprintUrl={blueprint2Url}
                       isDarkMode={isDarkMode}
-                      viewAngle={viewAngle}
+
                       showDimensions={showMeasurements}
                       showLengthBar={false}
                       lengthBarIndex={1}
