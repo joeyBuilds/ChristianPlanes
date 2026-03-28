@@ -14,7 +14,7 @@ interface InlineSelectorProps {
 export function InlineSelector({ selectedSlug, onSelect, accentColor, align = 'left' }: InlineSelectorProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const [cadFirst, setCadFirst] = useState(false)
+  const [cadFirst, setCadFirst] = useState(true)
   const [highlightIndex, setHighlightIndex] = useState(-1)
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)

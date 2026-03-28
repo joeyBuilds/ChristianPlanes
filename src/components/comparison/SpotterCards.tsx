@@ -6,13 +6,40 @@ interface SpotterCardsProps {
   aircraft2Slug: string | null
   aircraft1Name: string
   aircraft2Name: string
+  ghostSlug?: string | null
+  ghostName?: string
 }
 
-export function SpotterCards({ aircraft1Slug, aircraft2Slug, aircraft1Name, aircraft2Name }: SpotterCardsProps) {
+function TipColumn({ name, color, tips }: { name: string; color: string; tips: ReturnType<typeof getSpotterTips> }) {
+  return (
+    <div className="p-3 sm:p-4">
+      <div className={`text-xs font-semibold mb-2 ${color}`}>{name}</div>
+      {tips.length > 0 ? (
+        <ul className="space-y-2">
+          {tips.map((tip, i) => (
+            <li key={i}>
+              <div className="text-xs font-medium text-foreground">{tip.feature}</div>
+              <div className="text-[11px] text-muted-foreground/70 leading-snug">{tip.detail}</div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="text-xs text-muted-foreground/40 italic">No spotter tips available</div>
+      )}
+    </div>
+  )
+}
+
+export function SpotterCards({ aircraft1Slug, aircraft2Slug, aircraft1Name, aircraft2Name, ghostSlug, ghostName }: SpotterCardsProps) {
   const tips1 = aircraft1Slug ? getSpotterTips(aircraft1Slug) : []
   const tips2 = aircraft2Slug ? getSpotterTips(aircraft2Slug) : []
+  const ghostTips = ghostSlug ? getSpotterTips(ghostSlug) : []
 
-  if (tips1.length === 0 && tips2.length === 0) return null
+  if (tips1.length === 0 && tips2.length === 0 && ghostTips.length === 0) return null
+
+  const columns = ghostSlug && ghostName
+    ? 'grid-cols-1 sm:grid-cols-3'
+    : 'grid-cols-1 sm:grid-cols-2'
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -22,39 +49,12 @@ export function SpotterCards({ aircraft1Slug, aircraft2Slug, aircraft1Name, airc
           How to Spot It
         </span>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border/40">
-        {/* Aircraft 1 tips */}
-        <div className="p-3 sm:p-4">
-          <div className="text-xs font-semibold text-blue-500 mb-2">{aircraft1Name}</div>
-          {tips1.length > 0 ? (
-            <ul className="space-y-2">
-              {tips1.map((tip, i) => (
-                <li key={i}>
-                  <div className="text-xs font-medium text-foreground">{tip.feature}</div>
-                  <div className="text-[11px] text-muted-foreground/70 leading-snug">{tip.detail}</div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="text-xs text-muted-foreground/40 italic">No spotter tips available</div>
-          )}
-        </div>
-        {/* Aircraft 2 tips */}
-        <div className="p-3 sm:p-4">
-          <div className="text-xs font-semibold text-red-500 mb-2">{aircraft2Name}</div>
-          {tips2.length > 0 ? (
-            <ul className="space-y-2">
-              {tips2.map((tip, i) => (
-                <li key={i}>
-                  <div className="text-xs font-medium text-foreground">{tip.feature}</div>
-                  <div className="text-[11px] text-muted-foreground/70 leading-snug">{tip.detail}</div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="text-xs text-muted-foreground/40 italic">No spotter tips available</div>
-          )}
-        </div>
+      <div className={`grid ${columns} divide-y sm:divide-y-0 sm:divide-x divide-border/40`}>
+        <TipColumn name={aircraft1Name} color="text-blue-500" tips={tips1} />
+        <TipColumn name={aircraft2Name} color="text-red-500" tips={tips2} />
+        {ghostSlug && ghostName && (
+          <TipColumn name={ghostName} color="text-purple-400" tips={ghostTips} />
+        )}
       </div>
     </div>
   )

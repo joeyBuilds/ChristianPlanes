@@ -25,8 +25,6 @@ interface StatDef {
   higherIsBetter?: boolean
 }
 
-type StatsTab = 'overview' | 'performance' | 'details'
-
 export function StatsPanel({
   aircraft1,
   aircraft2,
@@ -38,7 +36,6 @@ export function StatsPanel({
   const { formatValue, getValue } = useUnits()
   const { count1, count2, isLoading: pulseLoading } = useFleetPulse(aircraft1Slug, aircraft2Slug)
   const [spinning, setSpinning] = useState(false)
-  const [activeTab, setActiveTab] = useState<StatsTab>('overview')
 
   const randomize = useCallback(() => {
     if (spinning) return
@@ -67,28 +64,21 @@ export function StatsPanel({
   const wingLoading2 = aircraft2.mtow.metric > 0 && aircraft2.wingArea.metric > 0
     ? aircraft2.mtow.metric / aircraft2.wingArea.metric : 0
 
-  // ── Stats by tab ──
-  const overviewStats: StatDef[] = [
+  // ── All stats in one view ──
+  const stats: StatDef[] = [
     { label: 'Length', value1: aircraft1.length, value2: aircraft2.length },
     { label: 'Height', value1: aircraft1.height, value2: aircraft2.height },
     { label: 'Wingspan', value1: aircraft1.wingspan, value2: aircraft2.wingspan },
     { label: 'Wing Area', value1: aircraft1.wingArea, value2: aircraft2.wingArea, decimals: 0 },
-  ]
-
-  const performanceStats: StatDef[] = [
     { label: 'MTOW', value1: aircraft1.mtow, value2: aircraft2.mtow, decimals: 0 },
     { label: 'Range', value1: aircraft1.range, value2: aircraft2.range, decimals: 0 },
     { label: 'Thrust / Eng', value1: aircraft1.thrustPerEngine, value2: aircraft2.thrustPerEngine, decimals: 0 },
     { label: 'Total Thrust', value1: aircraft1.totalThrust, value2: aircraft2.totalThrust, decimals: 0 },
   ]
 
-  const currentStats = activeTab === 'overview' ? overviewStats : performanceStats
-
   const tally = useMemo(() => {
-    // Tally across ALL stats for the current tab
-    const allStats = [...currentStats]
     let ac1 = 0, ac2 = 0
-    for (const s of allStats) {
+    for (const s of stats) {
       const v1 = getValue(s.value1)
       const v2 = getValue(s.value2)
       const hib = s.higherIsBetter !== false
@@ -96,13 +86,7 @@ export function StatsPanel({
       else if (hib ? v2 > v1 : v2 < v1) ac2++
     }
     return { ac1, ac2 }
-  }, [currentStats, getValue])
-
-  const tabs: { key: StatsTab; label: string }[] = [
-    { key: 'overview', label: 'Overview' },
-    { key: 'performance', label: 'Performance' },
-    { key: 'details', label: 'Details' },
-  ]
+  }, [stats, getValue])
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -237,29 +221,9 @@ export function StatsPanel({
         </span>
       </div>
 
-      {/* ── Row 3: tabs ── */}
-      <div className="flex border-b border-border/40 bg-muted/5">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'flex-1 py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.15em] transition-colors cursor-pointer',
-              activeTab === tab.key
-                ? 'text-foreground border-b-2 border-primary'
-                : 'text-muted-foreground/40 hover:text-muted-foreground/70'
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Stat rows for current tab ── */}
-      {activeTab !== 'details' ? (
-        <>
-          <div className="divide-y divide-border/40">
-            {currentStats.map((stat) => {
+      {/* ── All stat rows ── */}
+      <div className="divide-y divide-border/40">
+        {stats.map((stat) => {
               const v1 = getValue(stat.value1)
               const v2 = getValue(stat.value2)
               const f1 = formatValue(stat.value1, stat.decimals ?? 1)
@@ -332,153 +296,69 @@ export function StatsPanel({
             })}
           </div>
 
-          {/* Text stats — shown on both overview and performance */}
-          <div className="divide-y divide-border/40 border-t border-border/40">
-            {activeTab === 'overview' && (
-              <>
-                <TextStatRow
-                  label="Engines"
-                  v1={String(aircraft1.engines)}
-                  v2={String(aircraft2.engines)}
-                  w1={aircraft1.engines > aircraft2.engines}
-                  w2={aircraft2.engines > aircraft1.engines}
-                />
-                {(() => {
-                  const m1 = parseFloat(aircraft1.cruiseSpeed.replace('M', ''))
-                  const m2 = parseFloat(aircraft2.cruiseSpeed.replace('M', ''))
-                  const validCompare = !isNaN(m1) && !isNaN(m2)
-                  return (
-                    <TextStatRow
-                      label="Cruise"
-                      v1={aircraft1.cruiseSpeed}
-                      v2={aircraft2.cruiseSpeed}
-                      w1={validCompare && m1 > m2}
-                      w2={validCompare && m2 > m1}
-                      delta={validCompare && m1 !== m2 ? `+${(Math.abs(m1 - m2) / Math.min(m1, m2) * 100).toFixed(1)}%` : undefined}
-                      deltaBlue={validCompare && m1 > m2}
-                    />
-                  )
-                })()}
-                {(() => {
-                  const cap1 = aircraft1.capacity || '—'
-                  const cap2 = aircraft2.capacity || '—'
-                  const c1 = parseInt(cap1.replace(/[^0-9]/g, '') || '0')
-                  const c2 = parseInt(cap2.replace(/[^0-9]/g, '') || '0')
-                  const sameUnit = cap1.includes('passenger') === cap2.includes('passenger')
-                  const validCompare = sameUnit && c1 > 0 && c2 > 0
-                  return (
-                    <TextStatRow
-                      label="Capacity"
-                      v1={cap1}
-                      v2={cap2}
-                      w1={validCompare && c1 > c2}
-                      w2={validCompare && c2 > c1}
-                      delta={validCompare && c1 !== c2 ? `+${(Math.abs(c1 - c2) / Math.min(c1, c2) * 100).toFixed(0)}%` : undefined}
-                      deltaBlue={validCompare && c1 > c2}
-                    />
-                  )
-                })()}
-              </>
-            )}
-            {activeTab === 'performance' && (
-              <>
-                <TextStatRow
-                  label="T/W Ratio"
-                  v1={thrustToWeight1 > 0 ? thrustToWeight1.toFixed(2) : '—'}
-                  v2={thrustToWeight2 > 0 ? thrustToWeight2.toFixed(2) : '—'}
-                  w1={thrustToWeight1 > thrustToWeight2 && thrustToWeight1 > 0}
-                  w2={thrustToWeight2 > thrustToWeight1 && thrustToWeight2 > 0}
-                  delta={thrustToWeight1 > 0 && thrustToWeight2 > 0 && thrustToWeight1 !== thrustToWeight2
-                    ? `+${(Math.abs(thrustToWeight1 - thrustToWeight2) / Math.min(thrustToWeight1, thrustToWeight2) * 100).toFixed(0)}%`
-                    : undefined}
-                  deltaBlue={thrustToWeight1 > thrustToWeight2}
-                />
-                <TextStatRow
-                  label="Wing Load"
-                  v1={wingLoading1 > 0 ? `${Math.round(wingLoading1)} kg/m²` : '—'}
-                  v2={wingLoading2 > 0 ? `${Math.round(wingLoading2)} kg/m²` : '—'}
-                  w1={false}
-                  w2={false}
-                />
-                <TextStatRow
-                  label="Engines"
-                  v1={String(aircraft1.engines)}
-                  v2={String(aircraft2.engines)}
-                  w1={aircraft1.engines > aircraft2.engines}
-                  w2={aircraft2.engines > aircraft1.engines}
-                />
-              </>
-            )}
-          </div>
-        </>
-      ) : (
-        /* ── Details tab: all stats combined ── */
-        <div className="divide-y divide-border/40">
-          {[...overviewStats, ...performanceStats].map((stat) => {
-            const v1 = getValue(stat.value1)
-            const v2 = getValue(stat.value2)
-            const f1 = formatValue(stat.value1, stat.decimals ?? 1)
-            const f2 = formatValue(stat.value2, stat.decimals ?? 1)
-            const hib = stat.higherIsBetter !== false
-            const w1 = hib ? v1 > v2 : v1 < v2
-            const w2 = hib ? v2 > v1 : v2 < v1
-            const tie = v1 === v2
-            const maxVal = Math.max(v1, v2)
-            const bar1Pct = maxVal > 0 ? (v1 / maxVal) * 100 : 0
-            const bar2Pct = maxVal > 0 ? (v2 / maxVal) * 100 : 0
-
-            return (
-              <div key={stat.label} className="grid grid-cols-[1fr_auto_1fr] items-center gap-0 px-3 sm:px-5 py-0.5 sm:py-1 min-h-[32px] hover:bg-muted/30 transition-colors">
-                <div className="flex flex-col items-end gap-0.5">
-                  <span className={cn(
-                    'text-[11px] sm:text-xs font-mono tabular-nums font-medium tracking-tight',
-                    w1 && !tie ? 'text-blue-500' : 'text-muted-foreground/70'
-                  )}>
-                    {f1}
-                  </span>
-                  <div className="w-full flex justify-end">
-                    <div className={cn('h-[1.5px] rounded-full transition-all duration-500', w1 && !tie ? 'bg-blue-500/50' : 'bg-muted-foreground/15')}
-                      style={{ width: `${bar1Pct}%` }} />
-                  </div>
-                </div>
-                <div className="flex flex-col items-center px-1.5 sm:px-3 min-w-[55px] sm:min-w-[80px]">
-                  <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-widest leading-none">
-                    {stat.label}
-                  </span>
-                </div>
-                <div className="flex flex-col items-start gap-0.5">
-                  <span className={cn(
-                    'text-[11px] sm:text-xs font-mono tabular-nums font-medium tracking-tight',
-                    w2 && !tie ? 'text-red-500' : 'text-muted-foreground/70'
-                  )}>
-                    {f2}
-                  </span>
-                  <div className="w-full flex justify-start">
-                    <div className={cn('h-[1.5px] rounded-full transition-all duration-500', w2 && !tie ? 'bg-red-500/50' : 'bg-muted-foreground/15')}
-                      style={{ width: `${bar2Pct}%` }} />
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-          <TextStatRow label="Engines" v1={String(aircraft1.engines)} v2={String(aircraft2.engines)} w1={aircraft1.engines > aircraft2.engines} w2={aircraft2.engines > aircraft1.engines} />
-          <TextStatRow label="Cruise" v1={aircraft1.cruiseSpeed} v2={aircraft2.cruiseSpeed} w1={false} w2={false} />
-          <TextStatRow label="Capacity" v1={aircraft1.capacity || '—'} v2={aircraft2.capacity || '—'} w1={false} w2={false} />
-          <TextStatRow
-            label="T/W Ratio"
-            v1={thrustToWeight1 > 0 ? thrustToWeight1.toFixed(2) : '—'}
-            v2={thrustToWeight2 > 0 ? thrustToWeight2.toFixed(2) : '—'}
-            w1={thrustToWeight1 > thrustToWeight2 && thrustToWeight1 > 0}
-            w2={thrustToWeight2 > thrustToWeight1 && thrustToWeight2 > 0}
-          />
-          <TextStatRow
-            label="Wing Load"
-            v1={wingLoading1 > 0 ? `${Math.round(wingLoading1)} kg/m²` : '—'}
-            v2={wingLoading2 > 0 ? `${Math.round(wingLoading2)} kg/m²` : '—'}
-            w1={false} w2={false}
-          />
-        </div>
-      )}
+      {/* ── Text stats + computed metrics ── */}
+      <div className="divide-y divide-border/40 border-t border-border/40">
+        <TextStatRow
+          label="Engines"
+          v1={String(aircraft1.engines)}
+          v2={String(aircraft2.engines)}
+          w1={aircraft1.engines > aircraft2.engines}
+          w2={aircraft2.engines > aircraft1.engines}
+        />
+        {(() => {
+          const m1 = parseFloat(aircraft1.cruiseSpeed.replace('M', ''))
+          const m2 = parseFloat(aircraft2.cruiseSpeed.replace('M', ''))
+          const validCompare = !isNaN(m1) && !isNaN(m2)
+          return (
+            <TextStatRow
+              label="Cruise"
+              v1={aircraft1.cruiseSpeed}
+              v2={aircraft2.cruiseSpeed}
+              w1={validCompare && m1 > m2}
+              w2={validCompare && m2 > m1}
+              delta={validCompare && m1 !== m2 ? `+${(Math.abs(m1 - m2) / Math.min(m1, m2) * 100).toFixed(1)}%` : undefined}
+              deltaBlue={validCompare && m1 > m2}
+            />
+          )
+        })()}
+        {(() => {
+          const cap1 = aircraft1.capacity || '—'
+          const cap2 = aircraft2.capacity || '—'
+          const c1 = parseInt(cap1.replace(/[^0-9]/g, '') || '0')
+          const c2 = parseInt(cap2.replace(/[^0-9]/g, '') || '0')
+          const sameUnit = cap1.includes('passenger') === cap2.includes('passenger')
+          const validCompare = sameUnit && c1 > 0 && c2 > 0
+          return (
+            <TextStatRow
+              label="Capacity"
+              v1={cap1}
+              v2={cap2}
+              w1={validCompare && c1 > c2}
+              w2={validCompare && c2 > c1}
+              delta={validCompare && c1 !== c2 ? `+${(Math.abs(c1 - c2) / Math.min(c1, c2) * 100).toFixed(0)}%` : undefined}
+              deltaBlue={validCompare && c1 > c2}
+            />
+          )
+        })()}
+        <TextStatRow
+          label="T/W Ratio"
+          v1={thrustToWeight1 > 0 ? thrustToWeight1.toFixed(2) : '—'}
+          v2={thrustToWeight2 > 0 ? thrustToWeight2.toFixed(2) : '—'}
+          w1={thrustToWeight1 > thrustToWeight2 && thrustToWeight1 > 0}
+          w2={thrustToWeight2 > thrustToWeight1 && thrustToWeight2 > 0}
+          delta={thrustToWeight1 > 0 && thrustToWeight2 > 0 && thrustToWeight1 !== thrustToWeight2
+            ? `+${(Math.abs(thrustToWeight1 - thrustToWeight2) / Math.min(thrustToWeight1, thrustToWeight2) * 100).toFixed(0)}%`
+            : undefined}
+          deltaBlue={thrustToWeight1 > thrustToWeight2}
+        />
+        <TextStatRow
+          label="Wing Load"
+          v1={wingLoading1 > 0 ? `${Math.round(wingLoading1)} kg/m²` : '—'}
+          v2={wingLoading2 > 0 ? `${Math.round(wingLoading2)} kg/m²` : '—'}
+          w1={false}
+          w2={false}
+        />
+      </div>
     </div>
   )
 }

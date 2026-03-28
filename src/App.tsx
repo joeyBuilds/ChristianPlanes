@@ -96,6 +96,8 @@ function ComparisonPage() {
               aircraft2Slug={aircraft2Slug}
               aircraft1Name={data.aircraft1.name}
               aircraft2Name={data.aircraft2.name}
+              ghostSlug={ghostAircraftSlug}
+              ghostName={ghostData?.name}
             />
             <RangeMapSection
               aircraft1={data.aircraft1}

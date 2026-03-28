@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type RefObject } from 'react'
+import { useState, useRef, useEffect, useMemo, type RefObject } from 'react'
 import {
   Layers,
   ArrowLeftRight,
@@ -10,9 +10,11 @@ import {
   Grid3X3,
   Sun,
   Moon,
+  Filter,
 } from 'lucide-react'
 import { useComparisonStore } from '@/stores/comparison-store'
 import { useIsDarkMode } from '@/hooks/useIsDarkMode'
+import { hasAircraftBlueprint, hasFullBlueprint } from '@/data/aircraft-blueprints'
 import { aircraftCatalog } from '@/data/aircraft-catalog'
 import { cn } from '@/lib/utils'
 import { ExportButton } from './ExportButton'
@@ -177,26 +179,33 @@ function GhostSelector({ selectedSlug, onSelect, btn, ico }: {
 }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [cadFirst, setCadFirst] = useState(true)
+  const [highlightIndex, setHighlightIndex] = useState(-1)
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
 
   const selected = selectedSlug ? aircraftCatalog.find(a => a.slug === selectedSlug) : null
-  const filtered = aircraftCatalog.filter(a =>
-    a.displayName.toLowerCase().includes(search.toLowerCase()) ||
-    a.manufacturer.toLowerCase().includes(search.toLowerCase()) ||
-    a.slug.toLowerCase().includes(search.toLowerCase())
-  )
-  const grouped = filtered.reduce((acc, entry) => {
-    if (!acc[entry.manufacturer]) acc[entry.manufacturer] = []
-    acc[entry.manufacturer].push(entry)
-    return acc
-  }, {} as Record<string, typeof filtered>)
+
+  const filtered = useMemo(() => {
+    let result = aircraftCatalog.filter(a =>
+      a.displayName.toLowerCase().includes(search.toLowerCase()) ||
+      a.manufacturer.toLowerCase().includes(search.toLowerCase()) ||
+      a.slug.toLowerCase().includes(search.toLowerCase())
+    )
+    if (cadFirst) {
+      result = [
+        ...result.filter(a => hasAircraftBlueprint(a.slug)),
+        ...result.filter(a => !hasAircraftBlueprint(a.slug)),
+      ]
+    }
+    return result
+  }, [search, cadFirst])
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false)
-        setSearch('')
+        setOpen(false); setSearch(''); setHighlightIndex(-1)
       }
     }
     if (open) {
@@ -205,9 +214,21 @@ function GhostSelector({ selectedSlug, onSelect, btn, ico }: {
     }
   }, [open])
 
+  useEffect(() => { if (open) { inputRef.current?.focus(); setHighlightIndex(-1) } }, [open])
+  useEffect(() => { setHighlightIndex(-1) }, [search])
   useEffect(() => {
-    if (open) inputRef.current?.focus()
-  }, [open])
+    if (highlightIndex >= 0 && listRef.current) {
+      const items = listRef.current.querySelectorAll('[data-aircraft-item]')
+      items[highlightIndex]?.scrollIntoView({ block: 'nearest' })
+    }
+  }, [highlightIndex])
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setHighlightIndex(prev => Math.min(prev + 1, filtered.length - 1)) }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setHighlightIndex(prev => Math.max(prev - 1, 0)) }
+    else if (e.key === 'Enter' && highlightIndex >= 0) { e.preventDefault(); onSelect(filtered[highlightIndex].slug); setOpen(false); setSearch(''); setHighlightIndex(-1) }
+    else if (e.key === 'Escape') { setOpen(false); setSearch(''); setHighlightIndex(-1) }
+  }
 
   const ghostOn = 'bg-purple-500/15 text-purple-400 border-purple-500/25'
   const ghostOff = 'text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-muted/40 border-transparent'
@@ -216,11 +237,7 @@ function GhostSelector({ selectedSlug, onSelect, btn, ico }: {
     <div ref={containerRef} className="relative">
       <button
         onClick={() => {
-          if (selectedSlug && !open) {
-            onSelect(null)
-          } else {
-            setOpen(!open)
-          }
+          if (selectedSlug && !open) { onSelect(null) } else { setOpen(!open) }
         }}
         className={cn(btn, 'border flex items-center gap-1', selectedSlug ? ghostOn : ghostOff)}
         title={selected ? `Ghost: ${selected.displayName} (click to remove)` : 'Add ghost aircraft'}
@@ -237,6 +254,7 @@ function GhostSelector({ selectedSlug, onSelect, btn, ico }: {
               ref={inputRef}
               value={search}
               onChange={e => setSearch(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Search aircraft..."
               className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
             />
@@ -245,36 +263,42 @@ function GhostSelector({ selectedSlug, onSelect, btn, ico }: {
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
+            <button
+              onClick={() => setCadFirst(!cadFirst)}
+              title={cadFirst ? 'Show all' : 'CAD blueprints first'}
+              className={cn('p-1 rounded transition-colors', cadFirst ? 'bg-emerald-500/20 text-emerald-400' : 'text-muted-foreground/50 hover:text-muted-foreground')}
+            >
+              <Filter className="w-3.5 h-3.5" />
+            </button>
           </div>
-          <div className="overflow-y-auto flex-1">
-            {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([manufacturer, entries]) => (
-              <div key={manufacturer}>
-                <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 sticky top-0">
-                  {manufacturer}
-                </div>
-                {entries.map(entry => (
-                  <button
-                    key={entry.slug}
-                    onClick={() => {
-                      onSelect(entry.slug)
-                      setOpen(false)
-                      setSearch('')
-                    }}
-                    className={cn(
-                      'w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center justify-between',
-                      entry.slug === selectedSlug ? 'bg-accent text-accent-foreground font-medium' : 'text-foreground'
-                    )}
-                  >
-                    <span>{entry.displayName}</span>
-                    <span className="text-xs text-muted-foreground capitalize">{entry.category}</span>
-                  </button>
-                ))}
-              </div>
+          <div ref={listRef} className="overflow-y-auto flex-1">
+            {filtered.map((entry, idx) => (
+              <button
+                key={entry.slug}
+                data-aircraft-item
+                onClick={() => { onSelect(entry.slug); setOpen(false); setSearch(''); setHighlightIndex(-1) }}
+                className={cn(
+                  'w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center justify-between',
+                  entry.slug === selectedSlug ? 'bg-accent text-accent-foreground font-medium' : 'text-foreground',
+                  idx === highlightIndex && 'bg-accent'
+                )}
+              >
+                <span className="flex items-center gap-1.5">
+                  {entry.displayName}
+                  {hasAircraftBlueprint(entry.slug) && (
+                    <span className={cn(
+                      "text-[10px] font-bold leading-none px-1 py-0.5 rounded",
+                      hasFullBlueprint(entry.slug)
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+                        : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                    )}>CAD</span>
+                  )}
+                </span>
+                <span className="text-xs text-muted-foreground capitalize">{entry.category}</span>
+              </button>
             ))}
             {filtered.length === 0 && (
-              <div className="px-3 py-8 text-sm text-muted-foreground text-center">
-                No aircraft found
-              </div>
+              <div className="px-3 py-8 text-sm text-muted-foreground text-center">No aircraft found</div>
             )}
           </div>
         </div>
