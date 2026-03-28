@@ -19,11 +19,6 @@ interface BlueprintViews {
 }
 
 const BLUEPRINT_REGISTRY: Record<string, BlueprintViews> = {
-  'A350-1000': {
-    side: 'a350-1000-side.svg',
-    top: 'a350-1000-top.svg',
-    front: 'a350-1000-front.svg',
-  },
   '747-8F': {
     side: '747-8f-side.svg',
     top: '747-8f-top.svg',
@@ -33,6 +28,11 @@ const BLUEPRINT_REGISTRY: Record<string, BlueprintViews> = {
     side: 'e175-side.png',
     top: 'e175-top.png',
     front: 'e175-front.png',
+  },
+  'A350-1000': {
+    side: 'a350-1000-side.svg',
+    top: 'a350-1000-top.png',
+    front: 'a350-1000-front.svg',
   },
 }
 
