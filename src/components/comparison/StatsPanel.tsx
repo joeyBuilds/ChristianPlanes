@@ -5,6 +5,7 @@ import { useFleetPulse } from '@/hooks/useFleetPulse'
 import { InlineSelector } from '@/components/aircraft-selector/InlineSelector'
 import { FleetPulseBadge } from './FleetPulseBadge'
 import { aircraftCatalog } from '@/data/aircraft-catalog'
+import { getTypeRating, shareTypeRating } from '@/data/type-ratings'
 import { cn } from '@/lib/utils'
 
 interface StatsPanelProps {
@@ -115,6 +116,16 @@ export function StatsPanel({
             align="left"
           />
           <FleetPulseBadge count={count1} isLoading={pulseLoading} />
+          {aircraft1Slug && getTypeRating(aircraft1Slug) && (
+            <span className={cn(
+              'text-[9px] font-mono font-medium px-1.5 py-0.5 rounded-full mt-0.5',
+              aircraft1Slug && aircraft2Slug && shareTypeRating(aircraft1Slug, aircraft2Slug)
+                ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30'
+                : 'bg-muted/30 text-muted-foreground/50'
+            )}>
+              {getTypeRating(aircraft1Slug!)}
+            </span>
+          )}
         </div>
         <button
           onClick={randomize}
@@ -196,6 +207,16 @@ export function StatsPanel({
             align="right"
           />
           <FleetPulseBadge count={count2} isLoading={pulseLoading} />
+          {aircraft2Slug && getTypeRating(aircraft2Slug) && (
+            <span className={cn(
+              'text-[9px] font-mono font-medium px-1.5 py-0.5 rounded-full mt-0.5',
+              aircraft1Slug && aircraft2Slug && shareTypeRating(aircraft1Slug, aircraft2Slug)
+                ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30'
+                : 'bg-muted/30 text-muted-foreground/50'
+            )}>
+              {getTypeRating(aircraft2Slug!)}
+            </span>
+          )}
         </div>
       </div>
 
