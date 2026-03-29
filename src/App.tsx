@@ -75,7 +75,7 @@ function ComparisonPage() {
             </div>
             <CanvasControls canvasRef={canvasRef} statsRef={statsRef} />
             <div ref={statsRef} className={ghostData ? 'flex flex-col md:flex-row gap-2 sm:gap-4' : ''}>
-              <div className={ghostData ? 'flex-1 min-w-0' : ''}>
+              <div className={ghostData ? 'md:flex-[2] min-w-0' : ''}>
                 <StatsPanel
                   aircraft1={data.aircraft1}
                   aircraft2={data.aircraft2}
@@ -86,7 +86,7 @@ function ComparisonPage() {
                 />
               </div>
               {ghostData && (
-                <div className="flex-1 min-w-0">
+                <div className="md:flex-[1] min-w-0">
                   <GhostStatsPanel ghostSpec={ghostData} />
                 </div>
               )}

@@ -151,6 +151,21 @@ const BLUEPRINT_REGISTRY: Record<string, BlueprintViews> = {
     top: 'e175-top.png',
     front: 'e175-front.png',
   },
+  '737 MAX 8': {
+    side: '737-MAX-8-side.png',
+    top: '737-MAX-8-top.png',
+    front: '737-MAX-8-front.png',
+  },
+  '787-8': {
+    side: '787-8-side.png',
+    top: '787-8-top.png',
+    front: '787-8-front.png',
+  },
+  '787-9': {
+    side: '787-9-side.png',
+    top: '787-9-top.png',
+    front: '787-9-front.png',
+  },
 }
 
 export function getAircraftBlueprintUrl(slug: string, view: ViewAngle = 'side'): string | null {
