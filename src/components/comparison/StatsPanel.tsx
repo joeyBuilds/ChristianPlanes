@@ -387,8 +387,12 @@ export function StatsPanel({
           label="Wing Load"
           v1={wingLoading1 > 0 ? `${Math.round(wingLoading1)} kg/m²` : '—'}
           v2={wingLoading2 > 0 ? `${Math.round(wingLoading2)} kg/m²` : '—'}
-          w1={false}
-          w2={false}
+          w1={wingLoading1 > wingLoading2 && wingLoading1 > 0}
+          w2={wingLoading2 > wingLoading1 && wingLoading2 > 0}
+          delta={wingLoading1 > 0 && wingLoading2 > 0 && wingLoading1 !== wingLoading2
+            ? `+${(Math.abs(wingLoading1 - wingLoading2) / Math.min(wingLoading1, wingLoading2) * 100).toFixed(0)}%`
+            : undefined}
+          deltaBlue={wingLoading1 > wingLoading2}
         />
       </div>
     </div>
