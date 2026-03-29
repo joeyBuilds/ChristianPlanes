@@ -384,9 +384,11 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                     showDimensions={showMeasurements}
                     showLengthBar={isOverlay}
                     lengthBarIndex={2}
-                    labelYOffset={isStacked || isOverlayMode
-                      ? -(22 + 18 + 18) // outermost — above blue and red dim lines
-                      : layout.labelRowY - layout.ghost.y - 22
+                    labelYOffset={isStacked
+                      ? (Math.min(layout.ac2.y, layout.ghost.y) - 22 - 18 - 18) - layout.ghost.y
+                      : isOverlayMode
+                        ? layout.labelRowY - layout.ghost.y - 22 - 18 - 18
+                        : layout.labelRowY - layout.ghost.y - 22
                     }
                     heightDimXOffset={ghostHeightDimX}
                   />
