@@ -78,8 +78,8 @@ export function AircraftSilhouette({
         {showDimensions && (
           <rect
             x={0} y={0} width={width} height={height}
-            fill="none" stroke={color} strokeWidth={0.8}
-            strokeDasharray="4 3" opacity={0.35}
+            fill={color} fillOpacity={0.06}
+            stroke={color} strokeWidth={0.5} strokeOpacity={0.2}
             rx={1}
           />
         )}
