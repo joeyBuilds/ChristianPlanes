@@ -100,7 +100,10 @@ export function InlineSelector({ selectedSlug, onSelect, accentColor, align = 'l
             'fixed z-50 bottom-0 left-2 right-2 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2',
             'sm:left-1/2 sm:-translate-x-1/2 sm:right-auto',
             'sm:w-[min(500px,85vw)]',
-            'rounded-t-2xl sm:rounded-xl border border-border bg-popover shadow-2xl',
+            'rounded-t-2xl sm:rounded-xl bg-popover shadow-2xl',
+            accentColor === 'blue'
+              ? 'border-2 border-blue-500/40'
+              : 'border-2 border-red-500/40',
             'max-h-[75vh] sm:max-h-[70vh] overflow-hidden flex flex-col',
           )}>
             {/* Mobile drag handle */}
