@@ -112,6 +112,11 @@ export function StatsPanel({
       if (thrustToWeight1 > thrustToWeight2) ac1++
       else if (thrustToWeight2 > thrustToWeight1) ac2++
     }
+    // Wing loading (lower = better maneuverability, but not always — count it neutral)
+    if (wingLoading1 > 0 && wingLoading2 > 0) {
+      if (wingLoading1 > wingLoading2) ac1++
+      else if (wingLoading2 > wingLoading1) ac2++
+    }
     return { ac1, ac2 }
   }, [stats, getValue, aircraft1, aircraft2, thrustToWeight1, thrustToWeight2])
 
