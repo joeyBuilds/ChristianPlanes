@@ -8,10 +8,12 @@ import { CanvasControls } from '@/components/canvas/CanvasControls'
 import { StatsPanel } from '@/components/comparison/StatsPanel'
 import { GhostStatsPanel } from '@/components/comparison/GhostStatsPanel'
 import { FunFacts } from '@/components/comparison/FunFacts'
+import { SpotterCards } from '@/components/comparison/SpotterCards'
 import { RangeMapSection } from '@/components/range-map/RangeMapSection'
 import { useAircraftData } from '@/hooks/useAircraftData'
 import { useGhostAircraft } from '@/hooks/useGhostAircraft'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Ghost, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 function ComparisonPage() {
   const { ac1, ac2 } = useParams()
@@ -73,8 +75,26 @@ function ComparisonPage() {
               />
             </div>
             <CanvasControls canvasRef={canvasRef} statsRef={statsRef} />
-            <div ref={statsRef} className={ghostData ? 'flex flex-col md:flex-row gap-2 sm:gap-4' : ''}>
-              <div className={ghostData ? 'flex-1 min-w-0' : ''}>
+            {/* Ghost toggle pill */}
+            <div className="flex justify-center sm:justify-end">
+              <button
+                onClick={() => ghostAircraftSlug
+                  ? useComparisonStore.getState().setGhostAircraft(null)
+                  : useComparisonStore.getState().setGhostAircraft('A320-200')
+                }
+                className={`flex items-center gap-1.5 px-4 py-1.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-[10px] font-semibold transition-all cursor-pointer ${
+                  ghostAircraftSlug
+                    ? 'border border-purple-500/40 bg-purple-500/15 text-purple-400 hover:bg-red-500/15 hover:border-red-500/40 hover:text-red-400'
+                    : 'border border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/50'
+                }`}
+              >
+                <Ghost className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
+                {ghostAircraftSlug ? <><span>Ghost Active</span><X className="w-3.5 h-3.5 sm:w-3 sm:h-3 opacity-60" /></> : 'Compare a third aircraft!'}
+              </button>
+            </div>
+            {/* Stats panels */}
+            <div ref={statsRef} className="flex flex-col md:flex-row gap-2 sm:gap-4">
+              <div className={ghostData ? 'md:flex-[2] min-w-0' : 'w-full'}>
                 <StatsPanel
                   aircraft1={data.aircraft1}
                   aircraft2={data.aircraft2}
@@ -84,12 +104,29 @@ function ComparisonPage() {
                   onSelectAircraft2={setAircraft2}
                 />
               </div>
-              {ghostData && (
-                <div className="flex-1 min-w-0">
-                  <GhostStatsPanel ghostSpec={ghostData} />
-                </div>
-              )}
+              <AnimatePresence>
+                {ghostData && (
+                  <motion.div
+                    className="md:flex-[1] min-w-0"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    <GhostStatsPanel ghostSpec={ghostData} ghostSlug={ghostAircraftSlug} onSelectGhost={useComparisonStore.getState().setGhostAircraft} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
+            <SpotterCards
+              aircraft1Slug={aircraft1Slug}
+              aircraft2Slug={aircraft2Slug}
+              aircraft1Name={data.aircraft1.name}
+              aircraft2Name={data.aircraft2.name}
+              ghostSlug={ghostAircraftSlug}
+              ghostName={ghostData?.name}
+            />
             <RangeMapSection
               aircraft1={data.aircraft1}
               aircraft2={data.aircraft2}

@@ -2,6 +2,7 @@ import type { AircraftSpec } from '@/types/aircraft'
 import type { ViewAngle } from '@/types/canvas'
 import { useSilhouette } from '@/hooks/useSilhouette'
 import { getAircraftBlueprintUrl } from '@/data/aircraft-blueprints'
+import { useComparisonStore } from '@/stores/comparison-store'
 import { AircraftSilhouette } from './AircraftSilhouette'
 
 interface GhostAircraftProps {
@@ -24,12 +25,13 @@ const GHOST_COLOR = '#a78bfa' // purple-400
 
 export function GhostAircraft({
   spec, viewAngle, pixelsPerMeter, x, y,
-  opacity = 0.25, isDarkMode = true, labelYOffset = -50,
+  opacity = 1, isDarkMode = true, labelYOffset = -50,
   showDimensions = false, heightDimSide = 'right',
   showLengthBar = false, lengthBarIndex = 0, heightDimXOffset,
 }: GhostAircraftProps) {
   const silhouette = useSilhouette(spec, viewAngle)
-  const blueprintUrl = getAircraftBlueprintUrl(spec.slug, viewAngle)
+  const { renderStyle } = useComparisonStore()
+  const blueprintUrl = renderStyle === 'silhouette' ? null : getAircraftBlueprintUrl(spec.slug, viewAngle)
 
   if (!silhouette) return null
 

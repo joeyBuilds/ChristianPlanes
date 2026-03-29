@@ -1,11 +1,8 @@
-import { useState, useRef, useEffect, type RefObject } from 'react'
+import { type RefObject } from 'react'
 import {
   Layers,
   ArrowLeftRight,
   AlignVerticalJustifyStart,
-  Ghost,
-  Search,
-  X,
   Ruler,
   Grid3X3,
   Sun,
@@ -13,7 +10,6 @@ import {
 } from 'lucide-react'
 import { useComparisonStore } from '@/stores/comparison-store'
 import { useIsDarkMode } from '@/hooks/useIsDarkMode'
-import { aircraftCatalog } from '@/data/aircraft-catalog'
 import { cn } from '@/lib/utils'
 import { ExportButton } from './ExportButton'
 
@@ -28,14 +24,13 @@ export function CanvasControls({ canvasRef, statsRef }: CanvasControlsProps) {
     setViewMode,
     viewAngle,
     setViewAngle,
-    ghostAircraftSlug,
-    setGhostAircraft,
     stackAlignment,
     cycleStackAlignment,
     showMeasurements,
     toggleMeasurements,
     showGrid,
     toggleGrid,
+    // renderStyle, toggleRenderStyle, // ready for render style toggle
     unitSystem,
     setUnitSystem,
   } = useComparisonStore()
@@ -134,12 +129,6 @@ export function CanvasControls({ canvasRef, statsRef }: CanvasControlsProps) {
           >
             <Grid3X3 className={ico} />
           </button>
-          <GhostSelector
-            selectedSlug={ghostAircraftSlug}
-            onSelect={setGhostAircraft}
-            btn={btn}
-            ico={ico}
-          />
         </div>
       </div>
 
@@ -171,114 +160,3 @@ export function CanvasControls({ canvasRef, statsRef }: CanvasControlsProps) {
   )
 }
 
-// --- Ghost aircraft inline selector ---
-function GhostSelector({ selectedSlug, onSelect, btn, ico }: {
-  selectedSlug: string | null; onSelect: (slug: string | null) => void; btn: string; ico: string
-}) {
-  const [open, setOpen] = useState(false)
-  const [search, setSearch] = useState('')
-  const containerRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const selected = selectedSlug ? aircraftCatalog.find(a => a.slug === selectedSlug) : null
-  const filtered = aircraftCatalog.filter(a =>
-    a.displayName.toLowerCase().includes(search.toLowerCase()) ||
-    a.manufacturer.toLowerCase().includes(search.toLowerCase()) ||
-    a.slug.toLowerCase().includes(search.toLowerCase())
-  )
-  const grouped = filtered.reduce((acc, entry) => {
-    if (!acc[entry.manufacturer]) acc[entry.manufacturer] = []
-    acc[entry.manufacturer].push(entry)
-    return acc
-  }, {} as Record<string, typeof filtered>)
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false)
-        setSearch('')
-      }
-    }
-    if (open) {
-      document.addEventListener('mousedown', handleClick)
-      return () => document.removeEventListener('mousedown', handleClick)
-    }
-  }, [open])
-
-  useEffect(() => {
-    if (open) inputRef.current?.focus()
-  }, [open])
-
-  const ghostOn = 'bg-purple-500/15 text-purple-400 border-purple-500/25'
-  const ghostOff = 'text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-muted/40 border-transparent'
-
-  return (
-    <div ref={containerRef} className="relative">
-      <button
-        onClick={() => {
-          if (selectedSlug && !open) {
-            onSelect(null)
-          } else {
-            setOpen(!open)
-          }
-        }}
-        className={cn(btn, 'border flex items-center gap-1', selectedSlug ? ghostOn : ghostOff)}
-        title={selected ? `Ghost: ${selected.displayName} (click to remove)` : 'Add ghost aircraft'}
-      >
-        <Ghost className={ico} />
-        {selectedSlug && <X className="w-2.5 h-2.5 opacity-50" />}
-      </button>
-
-      {open && (
-        <div className="absolute z-50 bottom-full mb-1 right-0 sm:left-1/2 sm:-translate-x-1/2 sm:right-auto w-[calc(100vw-2rem)] sm:w-72 max-w-72 rounded-lg border border-border bg-popover shadow-xl max-h-72 overflow-hidden flex flex-col">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
-            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-            <input
-              ref={inputRef}
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search aircraft..."
-              className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-            />
-            {search && (
-              <button onClick={() => setSearch('')} className="text-muted-foreground hover:text-foreground">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-          <div className="overflow-y-auto flex-1">
-            {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([manufacturer, entries]) => (
-              <div key={manufacturer}>
-                <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 sticky top-0">
-                  {manufacturer}
-                </div>
-                {entries.map(entry => (
-                  <button
-                    key={entry.slug}
-                    onClick={() => {
-                      onSelect(entry.slug)
-                      setOpen(false)
-                      setSearch('')
-                    }}
-                    className={cn(
-                      'w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center justify-between',
-                      entry.slug === selectedSlug ? 'bg-accent text-accent-foreground font-medium' : 'text-foreground'
-                    )}
-                  >
-                    <span>{entry.displayName}</span>
-                    <span className="text-xs text-muted-foreground capitalize">{entry.category}</span>
-                  </button>
-                ))}
-              </div>
-            ))}
-            {filtered.length === 0 && (
-              <div className="px-3 py-8 text-sm text-muted-foreground text-center">
-                No aircraft found
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}

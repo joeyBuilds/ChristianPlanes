@@ -5,6 +5,7 @@ import { useFleetPulse } from '@/hooks/useFleetPulse'
 import { InlineSelector } from '@/components/aircraft-selector/InlineSelector'
 import { FleetPulseBadge } from './FleetPulseBadge'
 import { aircraftCatalog } from '@/data/aircraft-catalog'
+import { getTypeRating, shareTypeRating } from '@/data/type-ratings'
 import { cn } from '@/lib/utils'
 
 interface StatsPanelProps {
@@ -34,13 +35,11 @@ export function StatsPanel({
 }: StatsPanelProps) {
   const { formatValue, getValue } = useUnits()
   const { count1, count2, isLoading: pulseLoading } = useFleetPulse(aircraft1Slug, aircraft2Slug)
-
   const [spinning, setSpinning] = useState(false)
 
   const randomize = useCallback(() => {
     if (spinning) return
     setSpinning(true)
-    // Delay the actual selection so the spin animation plays first
     setTimeout(() => {
       const slugs = aircraftCatalog.map((a) => a.slug)
       const pick1 = slugs[Math.floor(Math.random() * slugs.length)]
@@ -54,6 +53,18 @@ export function StatsPanel({
     }, 600)
   }, [onSelectAircraft1, onSelectAircraft2, spinning])
 
+  // ── Computed metrics ──
+  const thrustToWeight1 = aircraft1.totalThrust.metric > 0 && aircraft1.mtow.metric > 0
+    ? (aircraft1.totalThrust.metric / (aircraft1.mtow.metric * 9.81 / 1000)) : 0
+  const thrustToWeight2 = aircraft2.totalThrust.metric > 0 && aircraft2.mtow.metric > 0
+    ? (aircraft2.totalThrust.metric / (aircraft2.mtow.metric * 9.81 / 1000)) : 0
+
+  const wingLoading1 = aircraft1.mtow.metric > 0 && aircraft1.wingArea.metric > 0
+    ? aircraft1.mtow.metric / aircraft1.wingArea.metric : 0
+  const wingLoading2 = aircraft2.mtow.metric > 0 && aircraft2.wingArea.metric > 0
+    ? aircraft2.mtow.metric / aircraft2.wingArea.metric : 0
+
+  // ── All stats in one view ──
   const stats: StatDef[] = [
     { label: 'Length', value1: aircraft1.length, value2: aircraft2.length },
     { label: 'Height', value1: aircraft1.height, value2: aircraft2.height },
@@ -67,6 +78,7 @@ export function StatsPanel({
 
   const tally = useMemo(() => {
     let ac1 = 0, ac2 = 0
+    // Count DualUnit stats
     for (const s of stats) {
       const v1 = getValue(s.value1)
       const v2 = getValue(s.value2)
@@ -74,8 +86,39 @@ export function StatsPanel({
       if (hib ? v1 > v2 : v1 < v2) ac1++
       else if (hib ? v2 > v1 : v2 < v1) ac2++
     }
+    // Engines (higher = more, but not necessarily better — count it anyway)
+    if (aircraft1.engines > aircraft2.engines) ac1++
+    else if (aircraft2.engines > aircraft1.engines) ac2++
+    // Cruise speed
+    const m1 = parseFloat(aircraft1.cruiseSpeed.replace('M', ''))
+    const m2 = parseFloat(aircraft2.cruiseSpeed.replace('M', ''))
+    if (!isNaN(m1) && !isNaN(m2)) {
+      if (m1 > m2) ac1++
+      else if (m2 > m1) ac2++
+    }
+    // Capacity (only compare when same type — both pax or both freight)
+    const cap1 = aircraft1.capacity || ''
+    const cap2 = aircraft2.capacity || ''
+    const c1 = parseInt(cap1.replace(/[^0-9]/g, '') || '0')
+    const c2 = parseInt(cap2.replace(/[^0-9]/g, '') || '0')
+    const bothPax = cap1.includes('passenger') && cap2.includes('passenger')
+    const bothFreight = !cap1.includes('passenger') && !cap2.includes('passenger') && c1 > 0 && c2 > 0
+    if ((bothPax || bothFreight) && c1 !== c2) {
+      if (c1 > c2) ac1++
+      else ac2++
+    }
+    // T/W ratio
+    if (thrustToWeight1 > 0 && thrustToWeight2 > 0) {
+      if (thrustToWeight1 > thrustToWeight2) ac1++
+      else if (thrustToWeight2 > thrustToWeight1) ac2++
+    }
+    // Wing loading (lower = better maneuverability, but not always — count it neutral)
+    if (wingLoading1 > 0 && wingLoading2 > 0) {
+      if (wingLoading1 > wingLoading2) ac1++
+      else if (wingLoading2 > wingLoading1) ac2++
+    }
     return { ac1, ac2 }
-  }, [stats, getValue])
+  }, [stats, getValue, aircraft1, aircraft2, thrustToWeight1, thrustToWeight2])
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -89,6 +132,16 @@ export function StatsPanel({
             align="left"
           />
           <FleetPulseBadge count={count1} isLoading={pulseLoading} />
+          {aircraft1Slug && getTypeRating(aircraft1Slug) && (
+            <span className={cn(
+              'text-[9px] font-mono font-medium px-1.5 py-0.5 rounded-full mt-0.5',
+              aircraft1Slug && aircraft2Slug && shareTypeRating(aircraft1Slug, aircraft2Slug)
+                ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30'
+                : 'bg-muted/30 text-muted-foreground/50'
+            )}>
+              {getTypeRating(aircraft1Slug!)}
+            </span>
+          )}
         </div>
         <button
           onClick={randomize}
@@ -98,11 +151,8 @@ export function StatsPanel({
           <span className="text-[7px] font-bold uppercase tracking-[0.18em] text-muted-foreground/25 group-hover:text-amber-400/70 transition-colors duration-300">
             Random
           </span>
-          {/* Slot machine frame */}
           <div className="relative rounded-md border-2 border-amber-700/30 group-hover:border-amber-400/60 bg-gradient-to-b from-neutral-900/80 to-neutral-800/80 dark:from-neutral-900 dark:to-neutral-950 p-[3px] transition-all duration-300 group-hover:shadow-[0_0_12px_rgba(251,191,36,0.3)]">
-            {/* Top accent bar */}
             <div className="h-[2px] rounded-full bg-gradient-to-r from-transparent via-amber-500/40 to-transparent group-hover:via-amber-400/80 mb-[2px] transition-all" />
-            {/* Reels */}
             <div className="flex gap-[2px]">
               {[0, 1, 2].map((i) => (
                 <div
@@ -132,10 +182,8 @@ export function StatsPanel({
                 </div>
               ))}
             </div>
-            {/* Bottom accent bar */}
             <div className="h-[2px] rounded-full bg-gradient-to-r from-transparent via-amber-500/40 to-transparent group-hover:via-amber-400/80 mt-[2px] transition-all" />
           </div>
-          {/* Pull lever nub */}
           <div className="w-[4px] h-[4px] rounded-full bg-red-600/30 group-hover:bg-red-500 group-hover:shadow-[0_0_6px_rgba(239,68,68,0.5)] transition-all duration-300" />
           <span className="text-[7px] font-bold uppercase tracking-[0.18em] text-muted-foreground/25 group-hover:text-amber-400/70 transition-colors duration-300">
             Pull
@@ -175,6 +223,16 @@ export function StatsPanel({
             align="right"
           />
           <FleetPulseBadge count={count2} isLoading={pulseLoading} />
+          {aircraft2Slug && getTypeRating(aircraft2Slug) && (
+            <span className={cn(
+              'text-[9px] font-mono font-medium px-1.5 py-0.5 rounded-full mt-0.5',
+              aircraft1Slug && aircraft2Slug && shareTypeRating(aircraft1Slug, aircraft2Slug)
+                ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30'
+                : 'bg-muted/30 text-muted-foreground/50'
+            )}>
+              {getTypeRating(aircraft2Slug!)}
+            </span>
+          )}
         </div>
       </div>
 
@@ -195,91 +253,83 @@ export function StatsPanel({
         </span>
       </div>
 
-      {/* ── Vertical stat rows ── */}
+      {/* ── All stat rows ── */}
       <div className="divide-y divide-border/40">
         {stats.map((stat) => {
-          const v1 = getValue(stat.value1)
-          const v2 = getValue(stat.value2)
-          const f1 = formatValue(stat.value1, stat.decimals ?? 1)
-          const f2 = formatValue(stat.value2, stat.decimals ?? 1)
-          const hib = stat.higherIsBetter !== false
-          const w1 = hib ? v1 > v2 : v1 < v2
-          const w2 = hib ? v2 > v1 : v2 < v1
-          const tie = v1 === v2
+              const v1 = getValue(stat.value1)
+              const v2 = getValue(stat.value2)
+              const f1 = formatValue(stat.value1, stat.decimals ?? 1)
+              const f2 = formatValue(stat.value2, stat.decimals ?? 1)
+              const hib = stat.higherIsBetter !== false
+              const w1 = hib ? v1 > v2 : v1 < v2
+              const w2 = hib ? v2 > v1 : v2 < v1
+              const tie = v1 === v2
 
-          // Delta percentage
-          const diff = Math.abs(v1 - v2)
-          const min = Math.min(v1, v2)
-          const pctDiff = min > 0 ? (diff / min) * 100 : 0
-          const pctStr = pctDiff < 0.1 ? '' : pctDiff < 10 ? `+${pctDiff.toFixed(1)}%` : `+${Math.round(pctDiff)}%`
+              const diff = Math.abs(v1 - v2)
+              const min = Math.min(v1, v2)
+              const pctDiff = min > 0 ? (diff / min) * 100 : 0
+              const pctStr = pctDiff < 0.1 ? '' : pctDiff < 10 ? `+${pctDiff.toFixed(1)}%` : `+${Math.round(pctDiff)}%`
 
-          // Bar widths (relative to max)
-          const maxVal = Math.max(v1, v2)
-          const bar1Pct = maxVal > 0 ? (v1 / maxVal) * 100 : 0
-          const bar2Pct = maxVal > 0 ? (v2 / maxVal) * 100 : 0
+              const maxVal = Math.max(v1, v2)
+              const bar1Pct = maxVal > 0 ? (v1 / maxVal) * 100 : 0
+              const bar2Pct = maxVal > 0 ? (v2 / maxVal) * 100 : 0
 
-          return (
-            <div key={stat.label} className="grid grid-cols-[1fr_auto_1fr] items-center gap-0 px-3 sm:px-5 py-1 sm:py-1.5 min-h-[38px] group hover:bg-muted/30 transition-colors">
-              {/* Left: ac1 value + bar */}
-              <div className="flex flex-col items-end gap-0.5">
-                <span className={cn(
-                  'text-xs sm:text-sm font-mono tabular-nums font-medium tracking-tight',
-                  w1 && !tie ? 'text-blue-500' : 'text-muted-foreground/70'
-                )}>
-                  {f1}
-                </span>
-                <div className="w-full flex justify-end">
-                  <div
-                    className={cn(
-                      'h-[2px] rounded-full transition-all duration-500',
-                      w1 && !tie ? 'bg-blue-500/50' : 'bg-muted-foreground/15'
+              return (
+                <div key={stat.label} className="grid grid-cols-[1fr_auto_1fr] items-center gap-0 px-3 sm:px-5 py-1 sm:py-1.5 min-h-[38px] group hover:bg-muted/30 transition-colors">
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className={cn(
+                      'text-xs sm:text-sm font-mono tabular-nums font-medium tracking-tight',
+                      w1 && !tie ? 'text-blue-500' : 'text-muted-foreground/70'
+                    )}>
+                      {f1}
+                    </span>
+                    <div className="w-full flex justify-end">
+                      <div
+                        className={cn(
+                          'h-[2px] rounded-full transition-all duration-500',
+                          w1 && !tie ? 'bg-blue-500/50' : 'bg-muted-foreground/15'
+                        )}
+                        style={{ width: `${bar1Pct}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center px-1.5 sm:px-3 min-w-[60px] sm:min-w-[85px]">
+                    <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest leading-none">
+                      {stat.label}
+                    </span>
+                    {!tie && pctStr && (
+                      <span className={cn(
+                        'text-[9px] font-mono tabular-nums mt-0.5 leading-none',
+                        w1 ? 'text-blue-500/50' : 'text-red-500/50'
+                      )}>
+                        {pctStr}
+                      </span>
                     )}
-                    style={{ width: `${bar1Pct}%` }}
-                  />
+                  </div>
+                  <div className="flex flex-col items-start gap-0.5">
+                    <span className={cn(
+                      'text-xs sm:text-sm font-mono tabular-nums font-medium tracking-tight',
+                      w2 && !tie ? 'text-red-500' : 'text-muted-foreground/70'
+                    )}>
+                      {f2}
+                    </span>
+                    <div className="w-full flex justify-start">
+                      <div
+                        className={cn(
+                          'h-[2px] rounded-full transition-all duration-500',
+                          w2 && !tie ? 'bg-red-500/50' : 'bg-muted-foreground/15'
+                        )}
+                        style={{ width: `${bar2Pct}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )
+            })}
+          </div>
 
-              {/* Center: label + delta */}
-              <div className="flex flex-col items-center px-1.5 sm:px-3 min-w-[60px] sm:min-w-[85px]">
-                <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest leading-none">
-                  {stat.label}
-                </span>
-                {!tie && pctStr && (
-                  <span className={cn(
-                    'text-[9px] font-mono tabular-nums mt-0.5 leading-none',
-                    w1 ? 'text-blue-500/50' : 'text-red-500/50'
-                  )}>
-                    {pctStr}
-                  </span>
-                )}
-              </div>
-
-              {/* Right: ac2 value + bar */}
-              <div className="flex flex-col items-start gap-0.5">
-                <span className={cn(
-                  'text-xs sm:text-sm font-mono tabular-nums font-medium tracking-tight',
-                  w2 && !tie ? 'text-red-500' : 'text-muted-foreground/70'
-                )}>
-                  {f2}
-                </span>
-                <div className="w-full flex justify-start">
-                  <div
-                    className={cn(
-                      'h-[2px] rounded-full transition-all duration-500',
-                      w2 && !tie ? 'bg-red-500/50' : 'bg-muted-foreground/15'
-                    )}
-                    style={{ width: `${bar2Pct}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* ── Bottom stats: Engines, Cruise, Capacity — same vertical alignment ── */}
+      {/* ── Text stats + computed metrics ── */}
       <div className="divide-y divide-border/40 border-t border-border/40">
-        {/* Engines */}
         <TextStatRow
           label="Engines"
           v1={String(aircraft1.engines)}
@@ -287,7 +337,6 @@ export function StatsPanel({
           w1={aircraft1.engines > aircraft2.engines}
           w2={aircraft2.engines > aircraft1.engines}
         />
-        {/* Cruise */}
         {(() => {
           const m1 = parseFloat(aircraft1.cruiseSpeed.replace('M', ''))
           const m2 = parseFloat(aircraft2.cruiseSpeed.replace('M', ''))
@@ -304,7 +353,6 @@ export function StatsPanel({
             />
           )
         })()}
-        {/* Capacity — only compare if same unit type */}
         {(() => {
           const cap1 = aircraft1.capacity || '—'
           const cap2 = aircraft2.capacity || '—'
@@ -324,12 +372,33 @@ export function StatsPanel({
             />
           )
         })()}
+        <TextStatRow
+          label="T/W Ratio"
+          v1={thrustToWeight1 > 0 ? thrustToWeight1.toFixed(2) : '—'}
+          v2={thrustToWeight2 > 0 ? thrustToWeight2.toFixed(2) : '—'}
+          w1={thrustToWeight1 > thrustToWeight2 && thrustToWeight1 > 0}
+          w2={thrustToWeight2 > thrustToWeight1 && thrustToWeight2 > 0}
+          delta={thrustToWeight1 > 0 && thrustToWeight2 > 0 && thrustToWeight1 !== thrustToWeight2
+            ? `+${(Math.abs(thrustToWeight1 - thrustToWeight2) / Math.min(thrustToWeight1, thrustToWeight2) * 100).toFixed(0)}%`
+            : undefined}
+          deltaBlue={thrustToWeight1 > thrustToWeight2}
+        />
+        <TextStatRow
+          label="Wing Load"
+          v1={wingLoading1 > 0 ? `${Math.round(wingLoading1)} kg/m²` : '—'}
+          v2={wingLoading2 > 0 ? `${Math.round(wingLoading2)} kg/m²` : '—'}
+          w1={wingLoading1 > wingLoading2 && wingLoading1 > 0}
+          w2={wingLoading2 > wingLoading1 && wingLoading2 > 0}
+          delta={wingLoading1 > 0 && wingLoading2 > 0 && wingLoading1 !== wingLoading2
+            ? `+${(Math.abs(wingLoading1 - wingLoading2) / Math.min(wingLoading1, wingLoading2) * 100).toFixed(0)}%`
+            : undefined}
+          deltaBlue={wingLoading1 > wingLoading2}
+        />
       </div>
     </div>
   )
 }
 
-/** A text-based stat row that follows the same 3-column vertical alignment */
 function TextStatRow({ label, v1, v2, w1, w2, delta, deltaBlue }: {
   label: string; v1: string; v2: string; w1: boolean; w2: boolean
   delta?: string; deltaBlue?: boolean

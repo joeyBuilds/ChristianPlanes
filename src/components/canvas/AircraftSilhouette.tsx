@@ -74,6 +74,16 @@ export function AircraftSilhouette({
         onMouseLeave={() => handleHover(false)}
         style={{ cursor: 'pointer' }}
       >
+        {/* Bounding box — toggles with measurements */}
+        {showDimensions && (
+          <rect
+            x={0} y={0} width={width} height={height}
+            fill={color} fillOpacity={0.06}
+            stroke={color} strokeWidth={0.5} strokeOpacity={0.2}
+            rx={1}
+          />
+        )}
+
         {useRealBlueprint ? (
           <>
             {/* Real CAD blueprint SVG mode — uses actual technical drawings */}
@@ -84,11 +94,11 @@ export function AircraftSilhouette({
               width={width}
               height={height}
               preserveAspectRatio="none"
-              opacity={opacity}
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}
+              opacity={opacity * 0.85}
               style={{
-                filter: `brightness(0) saturate(100%) invert(1) opacity(${opacity * 0.85})`,
+                filter: 'brightness(0) saturate(100%) invert(1)',
                 transition: 'filter 0.2s',
               }}
             />

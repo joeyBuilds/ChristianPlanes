@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Aircraft View Cropper</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a1929;color:#e2e8f0;font-family:system-ui;padding:1rem;user-select:none}
+h1{color:#60a5fa;font-size:1.2rem;margin-bottom:.5rem}
+.controls{display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem;flex-wrap:wrap}
+.controls select,.controls button{padding:.4rem .8rem;border-radius:6px;border:1px solid #1e3a5f;background:#0d1f35;color:#e2e8f0;font-size:.8rem;cursor:pointer}
+.controls button{background:#1e40af;border-color:#2563eb}
+.controls button:hover{background:#2563eb}
+.controls button.danger{background:#991b1b;border-color:#dc2626}
+.controls .slug{color:#60a5fa;font-weight:700;font-size:.9rem}
+.view-btn{padding:.3rem .6rem;border-radius:4px;border:2px solid #334155;background:#0d1f35;color:#94a3b8;cursor:pointer;font-size:.75rem;font-weight:700}
+.view-btn.active{border-color:#60a5fa;color:#60a5fa;background:#1e3a5f}
+.view-btn.done{border-color:#22c55e;color:#22c55e}
+.canvas-wrap{position:relative;overflow:auto;border:1px solid #1e3a5f;border-radius:8px;background:#000;max-height:75vh}
+canvas{display:block;cursor:crosshair}
+.status{margin-top:.5rem;font-size:.75rem;color:#64748b;font-family:monospace}
+.saved{color:#22c55e}
+.instructions{font-size:.7rem;color:#475569;margin-bottom:.5rem}
+</style></head>
+<body>
+<h1>Aircraft View Cropper</h1>
+<div class="instructions">Select aircraft → click view button (side/top/front) → draw rectangle on image → Save All</div>
+<div class="controls">
+  <select id="aircraft"></select>
+  <span class="slug" id="slugDisplay"></span>
+  <span style="width:1rem"></span>
+  <button class="view-btn" data-view="side" onclick="setView('side')">SIDE</button>
+  <button class="view-btn" data-view="top" onclick="setView('top')">TOP</button>
+  <button class="view-btn" data-view="front" onclick="setView('front')">FRONT</button>
+  <span style="width:1rem"></span>
+  <button onclick="saveAll()">💾 Save All</button>
+  <button class="danger" onclick="clearAll()">Clear</button>
+</div>
+<div class="canvas-wrap">
+  <canvas id="canvas"></canvas>
+</div>
+<div class="status" id="status">Load an aircraft to begin</div>
+
+<script>
+const RENDERS_PATH = '3-view-renders/';
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const statusEl = document.getElementById('status');
+const slugEl = document.getElementById('slugDisplay');
+
+let currentImage = null;
+let currentSlug = '';
+let currentView = 'side';
+let drawing = false;
+let startX, startY;
+let crops = {}; // {side: {x,y,w,h}, top: {...}, front: {...}}
+
+// Aircraft list — populated from filesystem
+const aircraft = [
+  '707-320B','727-200ADV','737-200','737-400','737-500','737-600',
+  '737-700','737-800','737-900','737-900ER',
+  '747-400','747-8I','757-200','757-300',
+  '767-200ER','767-400ER',
+  '777-200','777-200LR','777-300','777-300ER','777-8','777-9',
+  'DC-8-61','DC-9-30','DC-10-30','MD-11'
+];
+
+const select = document.getElementById('aircraft');
+aircraft.forEach(a => {
+  const opt = document.createElement('option');
+  opt.value = a; opt.textContent = a;
+  select.appendChild(opt);
+});
+
+select.onchange = () => loadAircraft(select.value);
+
+function loadAircraft(name) {
+  currentSlug = name;
+  slugEl.textContent = name;
+  crops = {};
+  updateViewButtons();
+
+  const img = new Image();
+  img.onload = () => {
+    currentImage = img;
+    canvas.width = img.width;
+    canvas.height = img.height;
+    draw();
+    statusEl.textContent = `Loaded ${name} (${img.width}×${img.height})`;
+  };
+  img.onerror = () => { statusEl.textContent = `Failed to load ${name}`; };
+  img.src = RENDERS_PATH + name + '.png';
+}
+
+function setView(view) {
+  currentView = view;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-view="${view}"]`).classList.add('active');
+  statusEl.textContent = `Draw ${view} view rectangle`;
+}
+
+function draw() {
+  if (!currentImage) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // White background so black lines are visible
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(currentImage, 0, 0);
+
+  // Draw crop rectangles
+  const colors = {side: '#60a5fa', top: '#22c55e', front: '#f87171'};
+  for (const [view, rect] of Object.entries(crops)) {
+    ctx.strokeStyle = colors[view] || '#fff';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 3]);
+    ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    ctx.setLineDash([]);
+
+    // Label
+    ctx.fillStyle = colors[view] || '#fff';
+    ctx.font = 'bold 14px system-ui';
+    ctx.fillText(view.toUpperCase(), rect.x + 4, rect.y + 16);
+  }
+}
+
+canvas.onmousedown = (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  startX = (e.clientX - rect.left) * scaleX;
+  startY = (e.clientY - rect.top) * scaleY;
+  drawing = true;
+};
+
+canvas.onmousemove = (e) => {
+  if (!drawing) return;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+
+  crops[currentView] = {
+    x: Math.min(startX, mx), y: Math.min(startY, my),
+    w: Math.abs(mx - startX), h: Math.abs(my - startY)
+  };
+  draw();
+};
+
+canvas.onmouseup = () => {
+  drawing = false;
+  updateViewButtons();
+
+  const c = crops[currentView];
+  if (c) statusEl.textContent = `${currentView}: ${Math.round(c.w)}×${Math.round(c.h)}px`;
+
+  // Auto-advance to next unset view
+  const order = ['side', 'top', 'front'];
+  for (const v of order) {
+    if (!crops[v]) { setView(v); break; }
+  }
+};
+
+function updateViewButtons() {
+  document.querySelectorAll('.view-btn').forEach(b => {
+    const v = b.dataset.view;
+    b.classList.toggle('done', !!crops[v]);
+    b.classList.toggle('active', v === currentView);
+  });
+}
+
+function clearAll() {
+  crops = {};
+  updateViewButtons();
+  draw();
+  statusEl.textContent = 'Cleared all crops';
+}
+
+async function saveAll() {
+  if (!currentImage || !currentSlug) return;
+
+  const views = Object.keys(crops);
+  if (views.length === 0) { statusEl.textContent = 'No crops to save!'; return; }
+
+  // Create cropped canvases and download them
+  for (const [view, rect] of Object.entries(crops)) {
+    const tmpCanvas = document.createElement('canvas');
+    tmpCanvas.width = rect.w;
+    tmpCanvas.height = rect.h;
+    const tmpCtx = tmpCanvas.getContext('2d');
+    tmpCtx.drawImage(currentImage, rect.x, rect.y, rect.w, rect.h, 0, 0, rect.w, rect.h);
+
+    const slug = currentSlug.toLowerCase().replace(/ /g, '-');
+    const filename = `${slug}-${view}.png`;
+
+    // Download the file
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = tmpCanvas.toDataURL('image/png');
+    link.click();
+  }
+
+  statusEl.innerHTML = `<span class="saved">✓ Saved ${views.length} crops for ${currentSlug}. Drop them into public/aircraft-images/blueprint/</span>`;
+}
+
+// Start with side view selected
+setView('side');
+if (aircraft.length > 0) loadAircraft(aircraft[0]);
+</script>
+</body></html>

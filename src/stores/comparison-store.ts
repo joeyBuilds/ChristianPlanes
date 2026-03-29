@@ -15,6 +15,7 @@ interface ComparisonState {
   showReferences: boolean
   showMeasurements: boolean
   showGrid: boolean
+  renderStyle: 'blueprint' | 'silhouette'
   ghostAircraftSlug: string | null
   selectedAirportIata: string | null
   rangeMapExpanded: boolean
@@ -29,6 +30,7 @@ interface ComparisonState {
   toggleReferences: () => void
   toggleMeasurements: () => void
   toggleGrid: () => void
+  toggleRenderStyle: () => void
   setGhostAircraft: (slug: string | null) => void
   setSelectedAirport: (iata: string | null) => void
   setRangeMapExpanded: (expanded: boolean) => void
@@ -47,6 +49,7 @@ export const useComparisonStore = create<ComparisonState>()(
       showReferences: false,
       showMeasurements: true,
       showGrid: true,
+      renderStyle: 'blueprint',
       ghostAircraftSlug: null,
       selectedAirportIata: null,
       rangeMapExpanded: false,
@@ -64,6 +67,7 @@ export const useComparisonStore = create<ComparisonState>()(
       toggleReferences: () => set((s) => ({ showReferences: !s.showReferences })),
       toggleMeasurements: () => set((s) => ({ showMeasurements: !s.showMeasurements })),
       toggleGrid: () => set((s) => ({ showGrid: !s.showGrid })),
+      toggleRenderStyle: () => set((s) => ({ renderStyle: s.renderStyle === 'blueprint' ? 'silhouette' : 'blueprint' })),
       setGhostAircraft: (slug) => set({ ghostAircraftSlug: slug }),
       setSelectedAirport: (iata) => set({ selectedAirportIata: iata }),
       setRangeMapExpanded: (expanded) => set({ rangeMapExpanded: expanded }),
@@ -79,6 +83,7 @@ export const useComparisonStore = create<ComparisonState>()(
         unitSystem: state.unitSystem,
         showMeasurements: state.showMeasurements,
         showGrid: state.showGrid,
+        renderStyle: state.renderStyle,
         ghostAircraftSlug: state.ghostAircraftSlug,
         selectedAirportIata: state.selectedAirportIata,
       }),

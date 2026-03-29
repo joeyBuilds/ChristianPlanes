@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState } from 'react'
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { geoAzimuthalEquidistant, geoPath, geoGraticule10 } from 'd3-geo'
 import { feature } from 'topojson-client'
 import type { Topology } from 'topojson-specification'
@@ -121,12 +122,21 @@ export function RangeMap({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
+      className="relative"
     >
+      <TransformWrapper
+        initialScale={1}
+        minScale={1}
+        maxScale={8}
+        wheel={{ step: 0.1 }}
+        pinch={{ step: 5 }}
+        doubleClick={{ mode: 'reset' }}
+      >
+        <TransformComponent wrapperStyle={{ width: '100%' }} contentStyle={{ width: '100%' }}>
       <svg
-
         viewBox={`0 0 ${width} ${height}`}
         className="w-full rounded-lg overflow-hidden"
-        style={{ background: colors.water }}
+        style={{ background: colors.water, cursor: 'grab' }}
       >
         {/* Graticule */}
         {graticule && (
@@ -198,9 +208,10 @@ export function RangeMap({
               key={a.iata}
               cx={pos[0]}
               cy={pos[1]}
-              r={hoveredAirport?.iata === a.iata ? 4 : 2}
+              r={hoveredAirport?.iata === a.iata ? 2.5 : 1}
               fill={color}
-              className="cursor-pointer transition-all duration-150"
+              className="cursor-pointer"
+              style={{ vectorEffect: 'non-scaling-stroke' }}
               onMouseEnter={() => setHoveredAirport(a)}
               onMouseLeave={() => setHoveredAirport(null)}
             />
@@ -213,10 +224,10 @@ export function RangeMap({
           if (!pos) return null
           return (
             <g>
-              <circle cx={pos[0]} cy={pos[1]} r={6} fill="white" opacity={0.3}>
+              <circle cx={pos[0]} cy={pos[1]} r={3} fill="white" opacity={0.3}>
                 <animate
                   attributeName="r"
-                  values="6;10;6"
+                  values="3;5;3"
                   dur="2s"
                   repeatCount="indefinite"
                 />
@@ -243,46 +254,31 @@ export function RangeMap({
           )
         })()}
 
-        {/* Hovered airport tooltip */}
-        {hoveredAirport && (() => {
-          const pos = projection([hoveredAirport.lon, hoveredAirport.lat])
-          if (!pos) return null
-          return (
-            <g>
-              <rect
-                x={pos[0] + 8}
-                y={pos[1] - 22}
-                width={Math.max(hoveredAirport.city.length, hoveredAirport.iata.length + 12) * 6.5 + 16}
-                height={36}
-                rx={4}
-                fill={isDark ? '#1e293b' : 'white'}
-                stroke={isDark ? '#334155' : '#e2e8f0'}
-                strokeWidth={1}
-                opacity={0.95}
-              />
-              <text
-                x={pos[0] + 16}
-                y={pos[1] - 6}
-                fill={isDark ? '#e2e8f0' : '#1e293b'}
-                fontSize={10}
-                fontWeight={600}
-                fontFamily="monospace"
-              >
-                {hoveredAirport.iata} - {hoveredAirport.city}
-              </text>
-              <text
-                x={pos[0] + 16}
-                y={pos[1] + 7}
-                fill={isDark ? '#94a3b8' : '#64748b'}
-                fontSize={9}
-                fontFamily="monospace"
-              >
-                {Math.round(hoveredAirport.distance)} km / {Math.round(hoveredAirport.distance / 1.852)} nm
-              </text>
-            </g>
-          )
-        })()}
       </svg>
+        </TransformComponent>
+      </TransformWrapper>
+
+      {/* Hovered airport tooltip — outside zoom container so it stays readable */}
+      <AnimatePresence>
+        {hoveredAirport && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.1 }}
+            className="absolute top-2 left-2 z-10 pointer-events-none"
+          >
+            <div className={`px-3 py-2 rounded-lg text-xs font-mono shadow-lg ${
+              isDark ? 'bg-slate-800/95 border border-slate-700 text-slate-200' : 'bg-white/95 border border-slate-200 text-slate-800'
+            }`}>
+              <div className="font-semibold">{hoveredAirport.iata} — {hoveredAirport.city}</div>
+              <div className={isDark ? 'text-slate-400' : 'text-slate-500'}>
+                {Math.round(hoveredAirport.distance)} km / {Math.round(hoveredAirport.distance / 1.852)} nm
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
