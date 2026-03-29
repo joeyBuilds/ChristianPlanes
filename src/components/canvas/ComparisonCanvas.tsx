@@ -294,7 +294,7 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
 
   return (
     <div className={`rounded-lg overflow-hidden ${isDarkMode ? 'border border-[#1e3a5f]' : 'border border-border'}`}>
-      <div className="relative w-full" style={{ background: canvasBg, aspectRatio: `${layout.canvasWidth} / ${layout.canvasHeight}`, maxHeight: '55vh', minHeight: '300px' }}>
+      <div className="relative w-full" style={{ background: canvasBg, aspectRatio: `${layout.canvasWidth} / ${layout.canvasHeight}`, maxHeight: '55vh', minHeight: '250px' }}>
         {/* Floating zoom controls */}
         <div className="absolute top-2 right-2 z-10 flex flex-col gap-0.5">
           <button onClick={() => transformRef.current?.zoomIn()} className={zoomBtn} title="Zoom in">

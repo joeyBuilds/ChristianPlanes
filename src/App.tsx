@@ -76,20 +76,20 @@ function ComparisonPage() {
             </div>
             <CanvasControls canvasRef={canvasRef} statsRef={statsRef} />
             {/* Ghost toggle pill */}
-            <div className="flex justify-end">
+            <div className="flex justify-center sm:justify-end">
               <button
                 onClick={() => ghostAircraftSlug
                   ? useComparisonStore.getState().setGhostAircraft(null)
                   : useComparisonStore.getState().setGhostAircraft('A320-200')
                 }
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-4 py-1.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-[10px] font-semibold transition-all cursor-pointer ${
                   ghostAircraftSlug
                     ? 'border border-purple-500/40 bg-purple-500/15 text-purple-400 hover:bg-red-500/15 hover:border-red-500/40 hover:text-red-400'
                     : 'border border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/50'
                 }`}
               >
-                <Ghost className="w-3 h-3" />
-                {ghostAircraftSlug ? <><span>Ghost Active</span><X className="w-3 h-3 opacity-60" /></> : 'Compare a third aircraft!'}
+                <Ghost className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
+                {ghostAircraftSlug ? <><span>Ghost Active</span><X className="w-3.5 h-3.5 sm:w-3 sm:h-3 opacity-60" /></> : 'Compare a third aircraft!'}
               </button>
             </div>
             {/* Stats panels */}
@@ -108,10 +108,11 @@ function ComparisonPage() {
                 {ghostData && (
                   <motion.div
                     className="md:flex-[1] min-w-0"
-                    initial={{ opacity: 0, x: 100, width: 0 }}
-                    animate={{ opacity: 1, x: 0, width: 'auto' }}
-                    exit={{ opacity: 0, x: 100, width: 0 }}
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3, ease: 'easeOut' }}
+                    style={{ overflow: 'hidden' }}
                   >
                     <GhostStatsPanel ghostSpec={ghostData} ghostSlug={ghostAircraftSlug} onSelectGhost={useComparisonStore.getState().setGhostAircraft} />
                   </motion.div>
