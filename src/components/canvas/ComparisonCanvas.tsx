@@ -369,9 +369,8 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                 if (isStacked || isOverlayMode) {
                   const maxWidthPx = Math.max(sil1.widthM, sil2.widthM, ghostSil.widthM) * layout.pixelsPerMeter
                   const baseX = Math.min(layout.ac1.x, layout.ac2.x, layout.ghost.x) + maxWidthPx + 10
-                  // Ghost shares the outermost bracket line
-                  const outerX = baseX + 18
-                  ghostHeightDimX = outerX - layout.ghost.x
+                  // Ghost goes outside both ac1/ac2 brackets
+                  ghostHeightDimX = (baseX + 36) - layout.ghost.x
                 }
                 return (
                   <GhostAircraft
