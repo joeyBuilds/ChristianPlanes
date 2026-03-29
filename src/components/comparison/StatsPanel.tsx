@@ -6,8 +6,6 @@ import { InlineSelector } from '@/components/aircraft-selector/InlineSelector'
 import { FleetPulseBadge } from './FleetPulseBadge'
 import { aircraftCatalog } from '@/data/aircraft-catalog'
 import { getTypeRating, shareTypeRating } from '@/data/type-ratings'
-import { useComparisonStore } from '@/stores/comparison-store'
-import { Ghost, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface StatsPanelProps {
@@ -122,35 +120,8 @@ export function StatsPanel({
     return { ac1, ac2 }
   }, [stats, getValue, aircraft1, aircraft2, thrustToWeight1, thrustToWeight2])
 
-  const { ghostAircraftSlug, setGhostAircraft } = useComparisonStore()
-
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
-      {/* Ghost toggle — right-aligned pill above selectors */}
-      <div className="flex justify-end px-2 pt-1.5 pb-0 bg-muted/20">
-        <button
-          onClick={() => ghostAircraftSlug ? setGhostAircraft(null) : setGhostAircraft('A320-200')}
-          className={cn(
-            'flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold transition-all cursor-pointer',
-            ghostAircraftSlug
-              ? 'border border-purple-500/40 bg-purple-500/15 text-purple-400 hover:bg-red-500/15 hover:border-red-500/40 hover:text-red-400'
-              : 'border border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/50 animate-pulse'
-          )}
-        >
-          {ghostAircraftSlug ? (
-            <>
-              <Ghost className="w-3 h-3" />
-              <span>Ghost Active</span>
-              <X className="w-3 h-3 opacity-60" />
-            </>
-          ) : (
-            <>
-              <Ghost className="w-3 h-3" />
-              Compare a third aircraft!
-            </>
-          )}
-        </button>
-      </div>
       {/* ── Row 1: aircraft selectors + random button ── */}
       <div className="grid grid-cols-[1fr_auto_1fr] items-center border-b border-border/40 bg-muted/20 min-h-[40px]">
         <div className="flex flex-col items-center justify-center px-2 py-1.5">
