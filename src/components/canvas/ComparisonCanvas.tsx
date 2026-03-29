@@ -364,11 +364,13 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
               {/* Ghost reference aircraft */}
               {ghostSpec && ghostSil && layout.ghost && (() => {
                 const isStacked = viewMode === 'stacked'
+                const isOverlayMode = viewMode === 'overlay'
                 let ghostHeightDimX: number | undefined
-                if (isStacked) {
+                if (isStacked || isOverlayMode) {
                   const maxWidthPx = Math.max(sil1.widthM, sil2.widthM, ghostSil.widthM) * layout.pixelsPerMeter
-                  const targetCanvasX = Math.min(layout.ac1.x, layout.ac2.x, layout.ghost.x) + maxWidthPx + 10
-                  ghostHeightDimX = targetCanvasX - layout.ghost.x
+                  const baseX = Math.min(layout.ac1.x, layout.ac2.x, layout.ghost.x) + maxWidthPx + 10
+                  // Ghost always goes outermost (furthest right) — outside ac1 and ac2 brackets
+                  ghostHeightDimX = (baseX + 36) - layout.ghost.x
                 }
                 return (
                   <GhostAircraft
@@ -382,8 +384,8 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                     showDimensions={showMeasurements}
                     showLengthBar={isOverlay}
                     lengthBarIndex={2}
-                    labelYOffset={isStacked
-                      ? -(22 + 18 + 18) // above blue and red dim lines
+                    labelYOffset={isStacked || isOverlayMode
+                      ? -(22 + 18 + 18) // outermost — above blue and red dim lines
                       : layout.labelRowY - layout.ghost.y - 22
                     }
                     heightDimXOffset={ghostHeightDimX}
