@@ -97,10 +97,7 @@ export function AircraftSilhouette({
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}
               opacity={opacity * 0.85}
-              style={{
-                filter: 'brightness(0) saturate(100%) invert(1)',
-                transition: 'filter 0.2s',
-              }}
+              filter={isDarkMode ? 'url(#blueprint-dark)' : 'url(#blueprint-light)'}
             />
             {/* "CAD" badge to indicate real blueprint — only when measurements on */}
             {showDimensions && <g opacity={0.6}>

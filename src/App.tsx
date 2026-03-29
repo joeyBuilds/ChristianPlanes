@@ -52,7 +52,7 @@ function ComparisonPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
       <Header />
-      <main className="flex-1 max-w-7xl mx-auto w-full px-2 sm:px-4 py-3 sm:py-6 flex flex-col gap-2 sm:gap-4">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-2 sm:px-4 pt-3 sm:pt-6 flex flex-col gap-2 sm:gap-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
         {isLoading && (
           <div className="flex items-center justify-center py-20 text-muted-foreground gap-2">
             <Loader2 className="w-5 h-5 animate-spin" />

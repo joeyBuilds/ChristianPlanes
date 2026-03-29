@@ -325,6 +325,15 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
               viewBox={`0 0 ${layout.canvasWidth} ${layout.canvasHeight}`}
               preserveAspectRatio="xMidYMid meet"
             >
+              {/* SVG filter for inverting CAD blueprints — more reliable than CSS filter on mobile Safari */}
+              <defs>
+                <filter id="blueprint-dark" colorInterpolationFilters="sRGB">
+                  <feColorMatrix type="matrix" values="-1 0 0 0 1  0 -1 0 0 1  0 0 -1 0 1  0 0 0 1 0" />
+                </filter>
+                <filter id="blueprint-light" colorInterpolationFilters="sRGB">
+                  <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" />
+                </filter>
+              </defs>
               {/* Background grid lines (togglable) */}
               {showGrid && (
                 <GridLines
