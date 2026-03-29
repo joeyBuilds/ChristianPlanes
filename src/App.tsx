@@ -87,7 +87,7 @@ function ComparisonPage() {
               </div>
               {ghostData && (
                 <div className="flex-1 min-w-0">
-                  <GhostStatsPanel ghostSpec={ghostData} ghostSlug={ghostAircraftSlug} />
+                  <GhostStatsPanel ghostSpec={ghostData} ghostSlug={ghostAircraftSlug} onSelectGhost={useComparisonStore.getState().setGhostAircraft} />
                 </div>
               )}
             </div>

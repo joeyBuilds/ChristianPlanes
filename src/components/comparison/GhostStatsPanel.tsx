@@ -3,13 +3,15 @@ import { useUnits } from '@/hooks/useUnits'
 import { useFleetPulse } from '@/hooks/useFleetPulse'
 import { FleetPulseBadge } from './FleetPulseBadge'
 import { getTypeRating } from '@/data/type-ratings'
+import { GhostSelector } from './GhostInlineSelector'
 
 interface GhostStatsPanelProps {
   ghostSpec: AircraftSpec
   ghostSlug?: string | null
+  onSelectGhost?: (slug: string | null) => void
 }
 
-export function GhostStatsPanel({ ghostSpec, ghostSlug }: GhostStatsPanelProps) {
+export function GhostStatsPanel({ ghostSpec, ghostSlug, onSelectGhost }: GhostStatsPanelProps) {
   const { formatValue } = useUnits()
   const { count1: ghostCount, isLoading: pulseLoading } = useFleetPulse(ghostSlug ?? null, null)
   const typeRating = ghostSlug ? getTypeRating(ghostSlug) : null
@@ -38,17 +40,17 @@ export function GhostStatsPanel({ ghostSpec, ghostSlug }: GhostStatsPanelProps) 
     { label: 'Wing Load', value: wingLoading > 0 ? `${Math.round(wingLoading)} kg/m²` : '—' },
   ]
 
-  // Row style matching StatsPanel exactly — same height as value+bar rows
   const row = 'flex items-center justify-between px-3 sm:px-5 py-1 sm:py-1.5 min-h-[38px] hover:bg-muted/30 transition-colors'
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
-      {/* Header */}
-      <div className="flex flex-col items-center justify-center px-3 py-2 border-b border-border/40 bg-muted/20 min-h-[40px]">
-        <span className="text-sm font-semibold text-purple-500 truncate">
-          {ghostSpec.name}
-          <span className="ml-2 text-[9px] font-semibold text-purple-500/50 uppercase tracking-wider">ref</span>
-        </span>
+      {/* Header with selector */}
+      <div className="flex flex-col items-center justify-center px-2 py-1.5 border-b border-border/40 bg-muted/20 min-h-[40px]">
+        {onSelectGhost ? (
+          <GhostSelector selectedSlug={ghostSlug ?? null} onSelect={onSelectGhost} />
+        ) : (
+          <span className="text-sm font-semibold text-purple-500 truncate">{ghostSpec.name}</span>
+        )}
         <FleetPulseBadge count={ghostCount} isLoading={pulseLoading} />
         {typeRating && (
           <span className="text-[9px] font-mono font-medium px-1.5 py-0.5 rounded-full mt-0.5 bg-muted/30 text-muted-foreground/50">
@@ -57,7 +59,7 @@ export function GhostStatsPanel({ ghostSpec, ghostSlug }: GhostStatsPanelProps) 
         )}
       </div>
 
-      {/* Spacer */}
+      {/* Spacer to align with tally row */}
       <div className="flex items-center justify-center py-1.5 border-b border-border/40 bg-muted/10 min-h-[40px]">
         <span className="text-[9px] font-semibold text-muted-foreground/30 uppercase tracking-[0.2em]">reference</span>
       </div>
