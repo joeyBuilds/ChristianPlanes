@@ -97,11 +97,11 @@ export function InlineSelector({ selectedSlug, onSelect, accentColor, align = 'l
           />
           {/* Panel */}
           <div className={cn(
-            'fixed z-50 bottom-0 left-0 right-0',
-            'sm:absolute sm:bottom-auto sm:top-full sm:mt-1 sm:left-1/2 sm:-translate-x-1/2',
-            'w-full sm:w-[min(560px,90vw)]',
+            'fixed z-50 bottom-0 left-2 right-2 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2',
+            'sm:left-1/2 sm:-translate-x-1/2 sm:right-auto',
+            'sm:w-[min(500px,85vw)]',
             'rounded-t-2xl sm:rounded-xl border border-border bg-popover shadow-2xl',
-            'max-h-[75vh] sm:max-h-[420px] overflow-hidden flex flex-col',
+            'max-h-[75vh] sm:max-h-[70vh] overflow-hidden flex flex-col',
           )}>
             {/* Mobile drag handle */}
             <div className="sm:hidden flex justify-center pt-2 pb-1">
