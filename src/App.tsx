@@ -75,21 +75,27 @@ function ComparisonPage() {
               />
             </div>
             <CanvasControls canvasRef={canvasRef} statsRef={statsRef} />
-            {/* Ghost toggle pill */}
+            {/* Ghost toggle pill — disabled on mobile */}
             <div className="flex justify-center sm:justify-end">
+              {/* Mobile: disabled pill */}
+              <div className="flex sm:hidden items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold border border-neutral-700 bg-black text-neutral-500">
+                <Ghost className="w-3.5 h-3.5 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.7)]" />
+                Ghost unavailable on mobile
+              </div>
+              {/* Desktop: functional button */}
               <button
                 onClick={() => ghostAircraftSlug
                   ? useComparisonStore.getState().setGhostAircraft(null)
                   : useComparisonStore.getState().setGhostAircraft('A320-200')
                 }
-                className={`flex items-center gap-1.5 px-4 py-1.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-[10px] font-semibold transition-all cursor-pointer ${
+                className={`hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold transition-all cursor-pointer ${
                   ghostAircraftSlug
                     ? 'border border-purple-500/40 bg-purple-500/15 text-purple-400 hover:bg-red-500/15 hover:border-red-500/40 hover:text-red-400'
                     : 'border border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/50'
                 }`}
               >
-                <Ghost className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
-                {ghostAircraftSlug ? <><span>Ghost Active</span><X className="w-3.5 h-3.5 sm:w-3 sm:h-3 opacity-60" /></> : 'Compare a third aircraft!'}
+                <Ghost className="w-3 h-3" />
+                {ghostAircraftSlug ? <><span>Ghost Active</span><X className="w-3 h-3 opacity-60" /></> : 'Compare a third aircraft!'}
               </button>
             </div>
             {/* Stats panels */}
