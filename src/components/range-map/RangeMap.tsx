@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState } from 'react'
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { geoAzimuthalEquidistant, geoPath, geoGraticule10 } from 'd3-geo'
 import { feature } from 'topojson-client'
 import type { Topology } from 'topojson-specification'
@@ -122,11 +123,19 @@ export function RangeMap({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
+      <TransformWrapper
+        initialScale={1}
+        minScale={1}
+        maxScale={8}
+        wheel={{ step: 0.1 }}
+        pinch={{ step: 5 }}
+        doubleClick={{ mode: 'reset' }}
+      >
+        <TransformComponent wrapperStyle={{ width: '100%' }} contentStyle={{ width: '100%' }}>
       <svg
-
         viewBox={`0 0 ${width} ${height}`}
         className="w-full rounded-lg overflow-hidden"
-        style={{ background: colors.water }}
+        style={{ background: colors.water, cursor: 'grab' }}
       >
         {/* Graticule */}
         {graticule && (
@@ -198,9 +207,10 @@ export function RangeMap({
               key={a.iata}
               cx={pos[0]}
               cy={pos[1]}
-              r={hoveredAirport?.iata === a.iata ? 4 : 2}
+              r={hoveredAirport?.iata === a.iata ? 2.5 : 1}
               fill={color}
-              className="cursor-pointer transition-all duration-150"
+              className="cursor-pointer"
+              style={{ vectorEffect: 'non-scaling-stroke' }}
               onMouseEnter={() => setHoveredAirport(a)}
               onMouseLeave={() => setHoveredAirport(null)}
             />
@@ -213,10 +223,10 @@ export function RangeMap({
           if (!pos) return null
           return (
             <g>
-              <circle cx={pos[0]} cy={pos[1]} r={6} fill="white" opacity={0.3}>
+              <circle cx={pos[0]} cy={pos[1]} r={3} fill="white" opacity={0.3}>
                 <animate
                   attributeName="r"
-                  values="6;10;6"
+                  values="3;5;3"
                   dur="2s"
                   repeatCount="indefinite"
                 />
@@ -283,6 +293,8 @@ export function RangeMap({
           )
         })()}
       </svg>
+        </TransformComponent>
+      </TransformWrapper>
     </motion.div>
   )
 }
