@@ -24,7 +24,7 @@ const GHOST_COLOR = '#a78bfa' // purple-400
 
 export function GhostAircraft({
   spec, viewAngle, pixelsPerMeter, x, y,
-  opacity = 0.25, isDarkMode = true, labelYOffset = -50,
+  opacity = 0.55, isDarkMode = true, labelYOffset = -50,
   showDimensions = false, heightDimSide = 'right',
   showLengthBar = false, lengthBarIndex = 0, heightDimXOffset,
 }: GhostAircraftProps) {

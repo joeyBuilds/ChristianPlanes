@@ -382,7 +382,7 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                     opacity={layout.ghost.opacity}
                     isDarkMode={isDarkMode}
                     showDimensions={showMeasurements}
-                    showLengthBar={isOverlay}
+                    showLengthBar={false}
                     lengthBarIndex={2}
                     labelYOffset={isStacked
                       ? (Math.min(layout.ac2.y, layout.ghost.y) - 22 - 18 - 18) - layout.ghost.y
@@ -495,29 +495,19 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
                 const ppm = layout.pixelsPerMeter
 
                 const isSideBySide = viewMode === 'side-by-side'
-                // When bars are stacked (not side-by-side), order top→bottom: ghost purple, red, blue
+                // Build entries and sort: smaller bar on top, larger on bottom
                 const ghostEntry = ghostSpec && ghostSil && layout.ghost
                   ? { name: ghostSpec.name, color: '#a78bfa', widthM: ghostSil.widthM, heightM: ghostSil.heightM, acX: layout.ghost.x }
                   : null
-                const entries: { name: string; color: string; widthM: number; heightM: number; acX: number }[] = isSideBySide
-                  ? [
-                      { name: aircraft1.name, color: AIRCRAFT1_COLOR, widthM: sil1.widthM, heightM: sil1.heightM, acX: layout.ac1.x },
-                      { name: aircraft2.name, color: AIRCRAFT2_COLOR, widthM: sil2.widthM, heightM: sil2.heightM, acX: layout.ac2.x },
-                      ...(ghostEntry ? [ghostEntry] : []),
-                    ]
-                  : [
-                      ...(ghostEntry ? [ghostEntry] : []),
-                      // Smaller aircraft bar on top (closer to aircraft), larger on bottom
-                      ...(sil1.widthM <= sil2.widthM
-                        ? [
-                            { name: aircraft1.name, color: AIRCRAFT1_COLOR, widthM: sil1.widthM, heightM: sil1.heightM, acX: layout.ac1.x },
-                            { name: aircraft2.name, color: AIRCRAFT2_COLOR, widthM: sil2.widthM, heightM: sil2.heightM, acX: layout.ac2.x },
-                          ]
-                        : [
-                            { name: aircraft2.name, color: AIRCRAFT2_COLOR, widthM: sil2.widthM, heightM: sil2.heightM, acX: layout.ac2.x },
-                            { name: aircraft1.name, color: AIRCRAFT1_COLOR, widthM: sil1.widthM, heightM: sil1.heightM, acX: layout.ac1.x },
-                          ]),
-                    ]
+                const allEntries = [
+                  { name: aircraft1.name, color: AIRCRAFT1_COLOR, widthM: sil1.widthM, heightM: sil1.heightM, acX: layout.ac1.x },
+                  { name: aircraft2.name, color: AIRCRAFT2_COLOR, widthM: sil2.widthM, heightM: sil2.heightM, acX: layout.ac2.x },
+                  ...(ghostEntry ? [ghostEntry] : []),
+                ]
+                // In side-by-side, keep original order; otherwise sort smaller first
+                const entries = isSideBySide
+                  ? allEntries
+                  : [...allEntries].sort((a, b) => a.widthM - b.widthM)
 
                 return (
                   <g>

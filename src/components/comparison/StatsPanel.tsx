@@ -78,6 +78,7 @@ export function StatsPanel({
 
   const tally = useMemo(() => {
     let ac1 = 0, ac2 = 0
+    // Count DualUnit stats
     for (const s of stats) {
       const v1 = getValue(s.value1)
       const v2 = getValue(s.value2)
@@ -85,8 +86,34 @@ export function StatsPanel({
       if (hib ? v1 > v2 : v1 < v2) ac1++
       else if (hib ? v2 > v1 : v2 < v1) ac2++
     }
+    // Engines (higher = more, but not necessarily better — count it anyway)
+    if (aircraft1.engines > aircraft2.engines) ac1++
+    else if (aircraft2.engines > aircraft1.engines) ac2++
+    // Cruise speed
+    const m1 = parseFloat(aircraft1.cruiseSpeed.replace('M', ''))
+    const m2 = parseFloat(aircraft2.cruiseSpeed.replace('M', ''))
+    if (!isNaN(m1) && !isNaN(m2)) {
+      if (m1 > m2) ac1++
+      else if (m2 > m1) ac2++
+    }
+    // Capacity (only compare when same type — both pax or both freight)
+    const cap1 = aircraft1.capacity || ''
+    const cap2 = aircraft2.capacity || ''
+    const c1 = parseInt(cap1.replace(/[^0-9]/g, '') || '0')
+    const c2 = parseInt(cap2.replace(/[^0-9]/g, '') || '0')
+    const bothPax = cap1.includes('passenger') && cap2.includes('passenger')
+    const bothFreight = !cap1.includes('passenger') && !cap2.includes('passenger') && c1 > 0 && c2 > 0
+    if ((bothPax || bothFreight) && c1 !== c2) {
+      if (c1 > c2) ac1++
+      else ac2++
+    }
+    // T/W ratio
+    if (thrustToWeight1 > 0 && thrustToWeight2 > 0) {
+      if (thrustToWeight1 > thrustToWeight2) ac1++
+      else if (thrustToWeight2 > thrustToWeight1) ac2++
+    }
     return { ac1, ac2 }
-  }, [stats, getValue])
+  }, [stats, getValue, aircraft1, aircraft2, thrustToWeight1, thrustToWeight2])
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
