@@ -11,6 +11,7 @@ import {
   Sun,
   Moon,
   Filter,
+  // Paintbrush, // ready for render style toggle
 } from 'lucide-react'
 import { useComparisonStore } from '@/stores/comparison-store'
 import { useIsDarkMode } from '@/hooks/useIsDarkMode'
@@ -38,6 +39,7 @@ export function CanvasControls({ canvasRef, statsRef }: CanvasControlsProps) {
     toggleMeasurements,
     showGrid,
     toggleGrid,
+    // renderStyle, toggleRenderStyle, // ready for render style toggle
     unitSystem,
     setUnitSystem,
   } = useComparisonStore()
@@ -136,6 +138,18 @@ export function CanvasControls({ canvasRef, statsRef }: CanvasControlsProps) {
           >
             <Grid3X3 className={ico} />
           </button>
+          {/* Render style toggle — hidden until filled silhouette assets are ready
+          <button
+            onClick={toggleRenderStyle}
+            className={cn(btn, 'border', renderStyle === 'silhouette'
+              ? 'bg-purple-500/15 text-purple-400 border-purple-500/25'
+              : off
+            )}
+            title={renderStyle === 'blueprint' ? 'Switch to filled silhouette' : 'Switch to CAD blueprint'}
+          >
+            <Paintbrush className={ico} />
+          </button>
+          */}
           <GhostSelector
             selectedSlug={ghostAircraftSlug}
             onSelect={setGhostAircraft}

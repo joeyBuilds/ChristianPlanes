@@ -113,11 +113,12 @@ function GridLines({ width, height, pixelsPerMeter, groundY, isDark }: {
 
 export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps) {
   const transformRef = useRef<any>(null)
-  const { viewMode, viewAngle, ghostAircraftSlug, stackAlignment, showMeasurements, showGrid } = useComparisonStore()
+  const { viewMode, viewAngle, ghostAircraftSlug, stackAlignment, showMeasurements, showGrid, renderStyle } = useComparisonStore()
   const isDarkMode = useIsDarkMode()
 
-  const blueprint1Url = getAircraftBlueprintUrl(aircraft1.slug, viewAngle)
-  const blueprint2Url = getAircraftBlueprintUrl(aircraft2.slug, viewAngle)
+  const useSilhouetteMode = renderStyle === 'silhouette'
+  const blueprint1Url = useSilhouetteMode ? null : getAircraftBlueprintUrl(aircraft1.slug, viewAngle)
+  const blueprint2Url = useSilhouetteMode ? null : getAircraftBlueprintUrl(aircraft2.slug, viewAngle)
 
   const sil1 = useSilhouette(aircraft1, viewAngle)
   const sil2 = useSilhouette(aircraft2, viewAngle)

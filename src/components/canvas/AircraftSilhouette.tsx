@@ -94,15 +94,11 @@ export function AircraftSilhouette({
               width={width}
               height={height}
               preserveAspectRatio="none"
-              opacity={opacity}
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}
+              opacity={opacity * 0.85}
               style={{
-                filter: `brightness(0) invert(1) sepia(1) ${
-                  color === '#f87171' ? 'hue-rotate(330deg) saturate(10) brightness(1.2)' :
-                  color === '#a78bfa' ? 'hue-rotate(230deg) saturate(10) brightness(1.3)' :
-                  'hue-rotate(190deg) saturate(10) brightness(1.1)'
-                } opacity(${opacity * 0.9})`,
+                filter: 'brightness(0) saturate(100%) invert(1)',
                 transition: 'filter 0.2s',
               }}
             />
