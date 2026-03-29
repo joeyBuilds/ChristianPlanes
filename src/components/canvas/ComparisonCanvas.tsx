@@ -207,7 +207,7 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
         if (stackAlignment === 'center') gX = drawLeft + (maxWidthPx - gWidthPx) / 2
         else if (stackAlignment === 'right') gX = drawLeft + (maxWidthPx - gWidthPx)
         const gY = ac2Y - ghostSil.heightM * ppm
-        ghostPos = { x: gX, y: gY, opacity: 0.25 }
+        ghostPos = { x: gX, y: gY, opacity: 0.85 }
       }
     } else if (viewMode === 'side-by-side') {
       const SBS_GAP = 10 // px gap between aircraft
@@ -219,7 +219,7 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
       if (hasGhost) {
         const gX = ac2X + sil2.widthM * ppm + SBS_GAP
         const gY = groundY - ghostSil.heightM * ppm
-        ghostPos = { x: gX, y: gY, opacity: 0.25 }
+        ghostPos = { x: gX, y: gY, opacity: 0.85 }
       }
     } else {
       // Overlay — center horizontally
@@ -243,7 +243,7 @@ export function ComparisonCanvas({ aircraft1, aircraft2 }: ComparisonCanvasProps
         const gY = isTopView
           ? drawTop + drawH / 2 - (ghostSil.heightM * ppm) / 2
           : groundY - ghostSil.heightM * ppm
-        ghostPos = { x: gX, y: gY, opacity: 0.25 }
+        ghostPos = { x: gX, y: gY, opacity: 0.85 }
       }
     }
 
