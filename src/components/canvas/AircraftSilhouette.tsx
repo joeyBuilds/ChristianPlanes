@@ -74,6 +74,16 @@ export function AircraftSilhouette({
         onMouseLeave={() => handleHover(false)}
         style={{ cursor: 'pointer' }}
       >
+        {/* Bounding box — toggles with measurements */}
+        {showDimensions && (
+          <rect
+            x={0} y={0} width={width} height={height}
+            fill="none" stroke={color} strokeWidth={0.8}
+            strokeDasharray="4 3" opacity={0.35}
+            rx={1}
+          />
+        )}
+
         {useRealBlueprint ? (
           <>
             {/* Real CAD blueprint SVG mode — uses actual technical drawings */}
